@@ -1,0 +1,162 @@
+@media (max-width: 980px) {
+  .app-shell {
+    display: block;
+  }
+
+  .sidebar {
+    position: relative;
+    min-height: auto;
+    padding-bottom: 18px;
+  }
+
+  .side-nav {
+    display: flex;
+    overflow-x: auto;
+    padding: 0 0 4px;
+    scrollbar-width: none;
+  }
+
+  .side-nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .side-link {
+    flex: 0 0 auto;
+  }
+
+  .sidebar-footer {
+    display: block;
+  }
+
+  .app-main {
+    padding: 20px 18px 48px;
+  }
+
+  .header-row {
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 720px) {
+  .page-title {
+    font-size: 1.9rem;
+  }
+
+  .daily-layout-shell {
+    grid-template-columns: 1fr;
+    min-height: auto;
+  }
+
+  .daily-side-panel {
+    position: relative;
+    top: 0;
+    max-height: none;
+    overflow: visible;
+  }
+
+  .daily-page {
+    min-height: auto;
+    overflow: visible;
+  }
+
+  .daily-main-shell {
+    max-height: none;
+    overflow: visible;
+    padding-right: 0;
+  }
+
+  .daily-masthead h1 {
+    font-size: 2.2rem;
+  }
+
+  .daily-stat-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .daily-section-head {
+    grid-template-columns: 1fr;
+  }
+
+  .daily-side-day {
+    grid-template-columns: 42px 1fr;
+  }
+
+  .filter-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .btn-sm {
+    height: 34px;
+  }
+
+  .timeline-item {
+    grid-template-columns: 72px 22px minmax(0, 1fr);
+  }
+
+  .timeline-time {
+    font-size: 17px;
+  }
+
+  .timeline-rail::before {
+    left: 10px;
+  }
+
+  .timeline-dot {
+    left: 5px;
+  }
+
+  .timeline-card {
+    padding: 14px;
+  }
+
+  .timeline-card-head {
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .timeline-head-right {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .media-shell {
+    min-height: 132px;
+    padding: 14px;
+  }
+
+  .media-content {
+    max-width: 100%;
+  }
+
+  .media-label {
+    font-size: 16px;
+  }
+
+  .mp-table {
+    min-width: 720px;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .page-header,
+  .timeline-item {
+    animation: fade-up 520ms ease both;
+  }
+
+  .timeline-item:nth-child(2n) {
+    animation-delay: 60ms;
+  }
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

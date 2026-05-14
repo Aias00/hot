@@ -1,0 +1,91 @@
+:root {
+  --font-body: "Avenir Next", "IBM Plex Sans", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", monospace;
+  --font-display: "Avenir Next", "IBM Plex Sans", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --nav-width: 164px;
+  --shell-width: 1440px;
+  --radius-sm: 10px;
+  --radius: 18px;
+  --radius-lg: 28px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --text-size-xs: 0.75rem;
+  --text-size-sm: 0.8125rem;
+  --text-size-base: 0.875rem;
+  --text-size-md: 1rem;
+  --text-size-lg: 1.125rem;
+  --text-size-xl: 1.25rem;
+  --text-size-2xl: 1.5rem;
+  --line-height-tight: 1.25;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.75;
+  --theme-accent: #6f68d8;
+  --theme-accent-rgb: 111, 104, 216;
+  --theme-accent-hover: #5a52cf;
+  --accent-emerald: #42a57a;
+  --accent-amber: #f4b544;
+  --accent-rose: #f0687a;
+  --shadow-card: 0 14px 30px rgba(67, 60, 104, 0.06);
+  --shadow-card-hover: 0 18px 36px rgba(67, 60, 104, 0.09);
+  --shadow-soft: 0 8px 18px rgba(67, 60, 104, 0.06);
+  --page-bg-solid: #fcf9f3;
+  --page-gradient:
+    radial-gradient(circle at 18% 14%, rgba(173, 168, 255, 0.12), transparent 20%),
+    linear-gradient(180deg, #fffdf8, #fbf8ff 44%, #f8f6ff);
+  --sidebar-gradient: linear-gradient(180deg, rgba(255, 253, 247, 0.98), rgba(245, 240, 255, 0.98));
+  --surface-0: rgba(111, 104, 216, 0.03);
+  --surface-1: rgba(111, 104, 216, 0.05);
+  --surface-2: rgba(111, 104, 216, 0.08);
+  --surface-3: rgba(111, 104, 216, 0.12);
+  --surface-card: rgba(255, 255, 255, 0.86);
+  --surface-elevated: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(251, 248, 255, 0.98));
+  --border: rgba(111, 104, 216, 0.13);
+  --border-soft: rgba(111, 104, 216, 0.08);
+  --border-strong: rgba(111, 104, 216, 0.18);
+  --border-emphasis: rgba(111, 104, 216, 0.28);
+  --text-0: #111111;
+  --text-1: #433c68;
+  --text-2: #7a72a8;
+  --text-soft-medium: rgba(17, 17, 17, 0.56);
+  --text-soft-strong: rgba(17, 17, 17, 0.82);
+  --theme-transition:
+    background-color 220ms ease,
+    background 220ms ease,
+    color 180ms ease,
+    border-color 180ms ease,
+    box-shadow 220ms ease,
+    transform 220ms ease;
+}
+
+html[data-theme="dark"] {
+  --theme-accent: #a39cff;
+  --theme-accent-rgb: 163, 156, 255;
+  --theme-accent-hover: #cbc7ff;
+  --page-bg-solid: #0f0d1a;
+  --page-gradient:
+    radial-gradient(circle at 18% 14%, rgba(143, 136, 255, 0.12), transparent 18%),
+    linear-gradient(180deg, #0f0d1a, #171429 46%, #19162d);
+  --sidebar-gradient: linear-gradient(180deg, rgba(15, 13, 26, 0.98), rgba(24, 19, 41, 0.98));
+  --surface-0: rgba(255, 255, 255, 0.035);
+  --surface-1: rgba(255, 255, 255, 0.06);
+  --surface-2: rgba(255, 255, 255, 0.1);
+  --surface-3: rgba(255, 255, 255, 0.14);
+  --surface-card: rgba(255, 255, 255, 0.04);
+  --surface-elevated: linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.04));
+  --border: rgba(143, 136, 255, 0.18);
+  --border-soft: rgba(143, 136, 255, 0.1);
+  --border-strong: rgba(143, 136, 255, 0.25);
+  --border-emphasis: rgba(143, 136, 255, 0.4);
+  --text-0: #faf8ff;
+  --text-1: #d8d2f2;
+  --text-2: #9f98c7;
+  --text-soft-medium: rgba(250, 248, 255, 0.62);
+  --text-soft-strong: rgba(250, 248, 255, 0.86);
+  --shadow-card: 0 14px 32px rgba(6, 4, 18, 0.28);
+  --shadow-card-hover: 0 18px 40px rgba(6, 4, 18, 0.34);
+  --shadow-soft: 0 8px 18px rgba(6, 4, 18, 0.22);
+}

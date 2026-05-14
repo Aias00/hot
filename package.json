@@ -1,0 +1,35 @@
+{
+  "name": "aihot-fork",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "node scripts/dev-full.mjs",
+    "dev:frontend": "vite",
+    "dev:backend": "uv run --project backend uvicorn hot_backend.app:app --app-dir backend/src --host 127.0.0.1 --port 18000 --reload",
+    "build": "vite build",
+    "preview": "vite preview",
+    "collect:rss": "uv run --project backend -- python backend/scripts/collect_default_rss.py",
+    "test": "npm run test:lib && npm run test:components && npm run test:backend",
+    "test:backend": "uv run --project backend pytest -q",
+    "test:lib": "node --test src/lib/feed.test.js",
+    "test:components": "vitest run",
+    "test:e2e": "playwright test"
+  },
+  "dependencies": {
+    "better-sqlite3": "^12.9.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "react-router-dom": "^7.9.4"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.55.0",
+    "@testing-library/jest-dom": "^6.8.0",
+    "@testing-library/react": "^16.3.0",
+    "@testing-library/user-event": "^14.6.1",
+    "@vitejs/plugin-react": "^5.1.0",
+    "jsdom": "^27.0.0",
+    "vite": "^7.2.0",
+    "vitest": "^3.2.4"
+  }
+}

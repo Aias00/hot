@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+  <channel>
+    <title>AIHOT RSS Generic Sample</title>
+    <link>https://example.com/feed</link>
+    <description>Sample feed for validating the rss-generic collector adapter.</description>
+    <item>
+      <title>OpenAI ships a smaller realtime voice model</title>
+      <link>https://example.com/posts/openai-voice-model</link>
+      <guid>sample-openai-voice-model</guid>
+      <pubDate>Tue, 13 May 2026 08:00:00 GMT</pubDate>
+      <author>OpenAI</author>
+      <category>OpenAI</category>
+      <category>语音</category>
+      <description>OpenAI发布更轻量的实时语音模型，用于更低延迟的对话应用。</description>
+    </item>
+    <item>
+      <title>Anthropic publishes a new alignment note</title>
+      <link>https://example.com/posts/anthropic-alignment-note</link>
+      <guid>sample-anthropic-alignment-note</guid>
+      <pubDate>Tue, 13 May 2026 09:00:00 GMT</pubDate>
+      <author>Anthropic</author>
+      <category>Anthropic</category>
+      <category>安全/对齐</category>
+      <description>Anthropic发布了一篇关于模型行为评估的新研究说明。</description>
+    </item>
+    <item>
+      <title>GitHub explains how it validates agent pull requests</title>
+      <link>https://example.com/posts/github-agent-prs</link>
+      <guid>sample-github-agent-prs</guid>
+      <pubDate>Tue, 13 May 2026 10:00:00 GMT</pubDate>
+      <author>GitHub Blog</author>
+      <category>GitHub</category>
+      <category>智能体</category>
+      <description>GitHub总结了审查 agent 生成 pull request 的方法论与实践。</description>
+    </item>
+  </channel>
+</rss>

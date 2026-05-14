@@ -1,0 +1,57 @@
+from __future__ import annotations
+
+from fastapi import APIRouter, Query
+
+from hot_backend.sqlite_store import get_store
+
+router = APIRouter()
+
+
+@router.get("/api/feed")
+def get_feed() -> dict:
+    return {"source": "sqlite", "items": get_store().get_feed_items()}
+
+
+@router.get("/api/collected")
+def get_collected(
+    q: str = Query(default=""),
+    source_id: str | None = Query(default=None),
+    source_ids: str | None = Query(default=None),
+    tag: str | None = Query(default=None),
+    from_date: str | None = Query(default=None, alias="from"),
+    to_date: str | None = Query(default=None, alias="to"),
+    sort: str = Query(default="date"),
+    dir: str = Query(default="desc"),
+    page: int = Query(default=1, ge=1),
+    limit: int = Query(default=50, ge=1, le=500),
+) -> dict:
+    payload = get_store().get_collected_items(
+        query=q,
+        source_id=source_id,
+        source_ids=source_ids.split(",") if source_ids else None,
+        tag=tag,
+        from_date=from_date,
+        to_date=to_date,
+        sort=sort,
+        direction=dir,
+        page=page,
+        limit=limit,
+    )
+    return payload
+
+
+@router.get("/api/daily")
+def get_daily(
+    view: str = Query(default="issue"),
+    date: str = Query(default="2026-05-08"),
+) -> dict:
+    return get_store().get_daily_snapshot(view=view, date=date)
+
+
+@router.get("/api/mp")
+def get_mp(
+    q: str = Query(default=""),
+    since: str = Query(default="30d"),
+    page: int = Query(default=1, ge=1),
+) -> dict:
+    return get_store().get_mp_snapshot(query=q, since=since, page=page)

@@ -1,0 +1,125 @@
+# Progress
+
+## Done
+- 抓取目标站的布局结构、视觉 token、响应式形态和时间轴条目数据。
+- 确认当前目录为空目录且不是 git 仓库，决定采用无依赖静态实现。
+- 已迁移到 `Vite + React`，新增 `package.json`、`vite.config.js`、`src/`、`public/` 结构。
+- 将原生 DOM 渲染逻辑重写为 React 组件，保留主题切换、搜索筛选、时间轴分组渲染和移动端顶部导航折叠。
+- 本地执行 `npm install`、`npm run build` 成功，并完成桌面端/移动端截图对照、控制台检查和交互验证。
+- 已拆成更清晰的 React 项目结构：`components/`、`hooks/`、`data/`、`lib/`。
+- 新增无依赖回归测试 `src/lib/feed.test.js`，覆盖搜索文本、分组、key、防碰撞和文案清洗逻辑。
+- 本地再次验证 `npm test`、`npm run build`、移动端搜索和主题切换均通过。
+- 导航已从 stub 升级为真实 `react-router-dom` 路由，覆盖 `/`、`/all`、`/daily`、`/mp`、`/about`、`/feedback`。
+- 样式已拆到 `src/styles/` 下的多个 CSS 文件，并通过单一入口导入。
+- 已补组件级测试和 Playwright E2E，验证搜索、主题持久化与多页导航。
+- 首页时间轴改成默认展示 5 条，并通过下拉自动续刷 5 条直到当日全量。
+- 主题切换已移动到侧栏顶部，并简化为显式深色/浅色两档。
+- `/daily` 已从标签筛分页改成更接近原站的日报分节页；`/mp` 已改成更接近原站的公众号榜单页。
+- 本地再次验证 `npm test`、`npm run build`、`npm run test:e2e` 全部通过。
+- `精选` 与 `全部 AI 动态` 现在都启用了统一的 5 条一批渐进加载。
+- `/daily`、`/daily/archive`、`/mp` 也接入了渐进加载，分别按章节、归档项和榜单行数递增。
+- `/mp` 现在支持真实的 URL 驱动筛选与分页状态；当上游 `/mp` 查询参数不可稳定复现时，会自动退回本地快照，但时间维度、页码和继续加载仍保持可用。
+- 数据获取已切换为本地 `/api/feed`、`/api/daily`、`/api/mp` 接口，前端运行时不再直接请求原站上游。
+- 已引入 `backend/` Python 后端骨架，把 `x-auto` 的 `x_atuo` 包 vendored 到当前仓库，后端宿主改为 `FastAPI`。
+- 本地 `/api/feed`、`/api/daily`、`/api/mp` 现由 Python + SQLite 提供，Vite 只做前端代理。
+- 已增加 `npm run dev:backend` 和联合启动 `npm run dev`，为后续接入 X 自动化和 AI 采集做准备。
+- 已落 `hot-collect` graph 框架骨架：source adapter registry、collector SQLite 表、collect API，以及可执行的 `mock-hot-source`。
+- 已实现第一个真实来源适配器 `rss-generic`，并通过 `rss-generic-sample` 跑通 discover/hydrate/normalize。
+- 采集结果已能写入 `hot_items` 并回流到 `/api/feed`，首页 feed 可以消费 collector 结果。
+- 已补 collector source 管理 API，可通过 `/api/collect/sources` 创建/更新可配置的 `rss-generic` 来源。
+- `rss-generic` 已支持 `file/http/https` 三类 URL，并补齐 source 删除与校验逻辑。
+- 已接入三个真实线上 RSS source（OpenAI / GitHub Blog / Hugging Face），并通过 `npm run collect:rss` 成功采集写入 `hot_items`，首页 feed 顶部已切到真实采集结果。
+- 已新增前端采集源管理页 `/collect`，支持 source 列表、创建/更新/删除、执行 dry-run / 正式采集，以及最近运行记录 / 运行详情查看。
+- 已新增独立的“采集热点”页面 `/collected`，可按来源与关键词查看 `hot_items` 中的采集结果。
+- `/collected` 已支持更细的筛选与排序：来源、关键词、起止日期，以及按时间/来源/标题排序。
+- `/collected` 已进一步支持服务端分页与前端继续加载，返回 `total_count/page/page_size/has_next` 并按查询条件逐页追加。
+- 已实现第一个真实来源适配器 `rss-generic`，并通过 `rss-generic-sample` 跑通 discover/hydrate/normalize/collect API。
+- `/daily` 的最新一期已切成采集驱动：后端会从 `hot_items` 派生最新采集日期的日报视图，并把该日期顶到侧栏和归档首位；旧 `daily_snapshot` 继续作为历史归档回退。
+- 已补 `/api/daily` 的后端回归，锁住“最新一期优先采集结果”和“归档首条切到采集日期”两条行为。
+- `/api/feed` 现在会为每条时间线内容补齐 `origin/sourceId/sourceTitle/publishedAt` 元信息，统一热点流可以区分采集结果与旧 seed。
+- `/all` 已升级成统一热点流视图：顶部可按内容类型（采集/静态）和采集来源过滤，同时保留现有搜索与渐进加载节奏。
+- 已补 `/all` 的前端回归，锁住“统一热点过滤控件可见且采集过滤会隐藏静态条目”的行为。
+- 已为 RSS 采集链路补齐摘要清洗：`rss-generic` 归一化、`/api/feed`、`/api/collected`、采集驱动 `/daily` 现在都会把 HTML 摘要转成纯文本。
+- 已继续扩展 RSS 文本清洗，去掉 GitHub 类 feed 常见的 boilerplate 句子，例如 `The post ... appeared first on ...`。
+- 已在 `hot-collect` graph 的 `enrich_items` 节点补齐来源级 enrichment：为采集内容生成 `source_category/source_category_label/hot_score/reason`。
+- 已修正 timeline key，避免不同 source 的同链路条目在 `/all` 中触发 React duplicate key 警告。
+- 已让 backend pytest 中创建的临时 RSS source 自清理，并手动清除了本地 SQLite 中遗留的测试 source，`/all` 与 `/collect` 不再被测试数据污染。
+- 已重新执行默认 RSS 采集，现有 `hot_items` 已刷新到清洗后的摘要版本。
+- backend pytest 现为 `11 passed`，新增用例锁住“HTML 摘要去标签”和“boilerplate 句子移除”两条行为。
+- `/api/feed` 与 `/api/collected` 已开始透出 enrichment 结果，`/all` 时间线不再显示空分数，`/collected` 也会展示来源分类、热度分和更具体的推荐理由。
+- backend pytest 现为 `12 passed`，新增用例锁住“采集结果带来源分类、热度分和推荐理由”这条行为。
+- 已新增 `mp-hot-snapshot` 专用 collector adapter，把现有公众号榜单快照归一到 `hot_items`，并将 `content_type=mp-article` 作为榜单读模型来源。
+- `/api/mp` 现已优先消费 `mp-article` 采集结果；当 collector 数据存在时会返回 `source = collector`、`状态：采集读模型`，旧 `mp_entries` 只做回退。
+- 已实际执行 `mp-hot-snapshot` 采集，当前 `/mp` 页面已切到 collector 读模型，标题链接也已改为使用归一化后的 `canonical_url`。
+- backend pytest 现为 `13 passed`，新增用例锁住“执行 mp 专用采集器后 `/api/mp` 应切到 collector 读模型并返回有效链接”这条行为。
+- `mp-hot-snapshot` 现已支持 HTML 榜单页解析与 `http/https/file` 三类 seed URL；默认 source 会先试 `https://aihot.virxact.com/mp?since=all`，解析失败时再回退本地快照。
+- 已补 HTML 榜单解析回归，锁住“标题链接 / 公众号链接 / 指标列”可从真实表格结构中抽取。
+- 已修正 `mp-hot-snapshot` 的回退表现：当远程榜单页无法解析、回退到本地快照时，`/api/mp` 会明确显示 `来源：本地快照回退`，且不再伪造标题链接。
+- backend pytest 现为 `15 passed`，新增用例锁住“HTML 榜单解析”和“回退模式显式且不伪造链接”两条行为。
+- `mp-hot-snapshot` 已支持可选二跳解析：当榜单页标题链接指向详情页时，可继续抓取详情页并解析“原文 / 账号主页”链接。
+- 已补二跳解析回归，锁住“详情页 -> 原文链接 / 账号链接”两条链路。
+- backend pytest 现为 `16 passed`。
+- `/api/mp` 的 collector 读模型现已从“快照顺序”升级为“日期优先 + 热度排序”，并在页头明确显示 `排序：热度排序`。
+- 已补排序回归，锁住“同日高互动条目应排在低互动条目前面”这条行为。
+- backend pytest 现为 `17 passed`。
+- `mp-hot-snapshot` 的二跳解析现已支持 `trusted_article_hosts` / `trusted_account_hosts` 白名单；不在白名单里的原文/账号链接会被拒绝，并回退到更安全的详情页链接或空账号链接。
+- 已补白名单回归，锁住“命中白名单时接入真实链接”和“不命中白名单时拒绝外链”两条行为。
+- backend pytest 现为 `18 passed`。
+- `/api/mp` 的热度排序现已支持来源级 `ranking_weights` 配置；默认 `mp-hot-snapshot` source 也已把权重显式写入 config，而不再只依赖代码默认值。
+- 已补排序权重回归，锁住“同一批榜单在自定义权重下可以翻转排序结果”这条行为。
+- backend pytest 现为 `19 passed`。
+- 默认 `mp-hot-snapshot` source 现已预置真实公众号域名白名单（`mp.weixin.qq.com` / `weixin.qq.com`）以及显式 `ranking_weights`，为后续真实榜单适配和运营调参打底。
+- 已补默认 source 配置回归，锁住“可信域名白名单与排序权重预设会被持久化到 source config”这条行为。
+- backend pytest 现为 `20 passed`。
+- 当 `mp-hot-snapshot` 的远程种子 URL 返回首页壳或其他不可解析页面时，`/api/mp` 页头现会明确显示 `来源：远程页不可用，回退本地快照`，不再和普通本地快照回退混在一起。
+- 已补回退原因回归，锁住“远程不可解析 -> 远程页不可用，回退本地快照”这条行为。
+- backend pytest 现为 `21 passed`。
+- `mp-hot-snapshot` 的远程回退原因现已进一步细分：若远程 URL 明显返回首页壳，会显示 `来源：远程路由返回首页壳，回退本地快照`，和一般远程不可解析区分开。
+- 已补更细的回退原因回归，锁住“远程首页壳 -> 首页壳回退文案”这条行为。
+- `hot-collect` 的 `discover_candidates` 事件现已透出 `source_modes` 与命中的 `seed_urls`，`/collect` 运行详情能直接看到这次是 `html-table`、`snapshot-json-home-shell-fallback` 还是其他模式。
+- 已补事件诊断回归，锁住“fallback 场景会把 source_mode 统计写进 execute 结果 events”这条行为。
+- 侧栏已隐藏 `AI 日报` / `公众号爆文` 两个入口，并把采集相关入口重命名为 `采集管理` / `采集归档`。
+- `/collect` 现已补 usage 说明卡，并在运行详情中直接展示 `discover_candidates` 的 `source_modes` 与 `seed_urls` 诊断。
+- `/collected` 与 `/all` 现已补定位说明：`/all` 是采集 + 静态快照的合并时间线，`/collected` 只看 collector 入库内容，页面文案和说明卡已明确区分这两个视图。
+- 默认 collector source 现已只保留 3 个真实线上 RSS 来源：`openai-news-rss`、`github-blog-rss`、`huggingface-blog-rss`。内置 mock/sample/mp 默认来源已从数据库与用户可见列表中清掉。
+- `/api/collect/adapter-kinds` 与 `采集管理` 页面现也只暴露 `rss-generic`，避免再把 mock/mp 适配器当成默认可用项展示给用户。
+- `/api/collected` 当前已只返回这 3 个 RSS 来源的采集结果，不再混入 sample/mp 虚拟来源结果。
+- 默认真实 RSS 来源现已扩展到 6 个：OpenAI、GitHub Blog、Hugging Face、Google Developers Blog、Google DeepMind News、Vercel News。
+- 已重新执行 `npm run collect:rss`，当前实际产出内容的来源包括：OpenAI、GitHub Blog、Google Developers Blog、Hugging Face、Vercel；其中 `Google DeepMind News RSS` 当前因 freshness 过滤暂无入库结果。
+- 默认真实 RSS 来源现已进一步扩展到 13 个，新增：Google Blog AI、Google Blog DeepMind、Replicate Blog、AWS Machine Learning Blog。
+- 已重新执行 `npm run collect:rss`，当前新增并已实际产出内容的来源包括：AWS Machine Learning Blog、Google Blog AI、Google Blog DeepMind；`Replicate Blog RSS` 当前因 freshness 过滤暂无入库结果。
+- 默认真实 RSS 来源现已扩展到 17 个，新增：Google Developers Tech Blog、SambaNova Blog、Microsoft Foundry Blog、LangGraph Blog。
+- 已重新执行 `npm run collect:rss`，当前新增并已实际产出内容的来源包括：SambaNova Blog、Microsoft Foundry Blog、LangGraph Blog；`Google Developers Tech Blog RSS` 当前因 freshness 过滤暂无入库结果。
+- 默认真实 RSS 来源现已扩展到 19 个，新增：Kaggle Blog RSS、Microsoft Semantic Kernel Blog RSS。
+- 已重新执行 `npm run collect:rss`，当前新增并已实际产出内容的来源包括：Microsoft Semantic Kernel Blog RSS；`Kaggle Blog RSS` 当前因 freshness 过滤暂无入库结果。
+- `collect_default_rss.py` 现已支持单源失败不中断整批采集，便于继续扩源时稳定拿到完整结果清单。
+- `/collect` 和 `/collected` 的来源展示已不再平铺：现在会按“模型与研究 / 开发者平台 / 云与推理基础设施 / 创意与生成工具”分层展示。
+- `/collect` 组头现在会显示每层来源数量；`/collected` 的来源统计和来源下拉也都按相同分层组织。
+- `/collect` 与 `/collected` 现已支持一级“来源分层”过滤；进入页面后可先按层级收窄，再继续看组内来源。
+- 两个页面现在都会记住你上次选中的分层，下次回来不用重新选择。
+- `/collect` 的“最近运行”现在也会跟随来源分层过滤，只显示当前层的 run，不再把 19 个源的执行记录混在一起。
+- `/collected` 现已支持层内来源多选：在同一分层下可以同时点选多个来源 chip，后端会通过 `source_ids=` 做真实多源过滤，不是前端假筛选。
+- `/collected` 现已支持层内来源多选：在同一分层下可以同时点选多个来源 chip，后端会通过 `source_ids=` 做真实多源过滤，不是前端假筛选。
+
+## Failures
+- 暂无。
+
+## Next
+- 如需继续“真 fork”，下一步可以把 seed 快照导入脚本化，或者直接接 `x_atuo.core` 的实时采集能力。
+- 如需继续工程化，可补后端 pytest、前后端联合 CI，以及后台同步任务/管理接口。
+- 如需继续采集驱动化，下一步最值得做的是把 `/mp` 或 `/all` 也逐步切到 `hot_items` / collector 读模型，而不是继续依赖旧 seed 表。
+- 如需继续采集驱动化，下一步最值得做的是给 `hot_items` 增加摘要清洗/HTML 去噪与来源级内容归类，再决定是否开始做 `mp` 专用采集器。
+- 如需继续采集驱动化，下一步最值得做的是继续清理 RSS 文本中的 boilerplate 句子（例如 “appeared first on …”），再开始设计 `mp` 专用采集器与读模型。
+- 如需继续采集驱动化，下一步最值得做的是给 RSS 结果增加来源级分类/打分规则，然后开始实现 `mp` 专用采集器，替掉旧 seed 榜单。
+- 如需继续采集驱动化，下一步最值得做的是把 enrichment 从规则型扩展成可配置规则表，再开始实现 `mp` 专用采集器与榜单归一化读模型。
+- 如需继续采集驱动化，下一步最值得做的是为 `mp-hot-snapshot` 补真实公众号原文链接抓取与账号主页链接映射，再把榜单排序从快照顺序升级为规则化热度排序。
+- 如需继续采集驱动化，下一步最值得做的是给 `mp-hot-snapshot` 增加二跳抓取（榜单页 -> 原文页/账号页），补齐真实公众号原文链接，再把榜单排序升级为规则化热度排序。
+- 如需继续采集驱动化，下一步最值得做的是把 `mp-hot-snapshot` 的二跳解析接到真实榜单源上，并补一层链接可信度/域名白名单，再把榜单排序升级为规则化热度排序。
+- 如需继续采集驱动化，下一步最值得做的是把 `mp-hot-snapshot` 的二跳解析接到真实榜单源上，并补一层链接可信度/域名白名单；之后再把当前启发式热度排序抽成可配置规则表。
+- 如需继续采集驱动化，下一步最值得做的是把 `trusted_*_hosts` 预设到真实公众号来源配置里，并继续补 `mp-hot-snapshot` 的真实远程榜单适配；排序权重层已经可配置，下一步更适合做来源级预设和运营调参。
+- 如需继续采集驱动化，下一步最值得做的是继续补 `mp-hot-snapshot` 的真实远程榜单适配与选择器稳健性；可信域名和调参底座已经有了，下一步更适合解决“远程源当前环境里经常回退本地快照”的问题。
+- 如需继续采集驱动化，下一步最值得做的是继续补 `mp-hot-snapshot` 的真实远程榜单适配与选择器稳健性；现在回退原因已经显式化，下一步应集中解决“远程源当前环境里经常回退本地快照”的根因。
+- 如需继续采集驱动化，下一步最值得做的是继续补 `mp-hot-snapshot` 的真实远程榜单适配与选择器稳健性；现在回退原因已经细分，下一步应集中解决“远程源当前环境里经常回首页壳”的根因。
+- 如需继续采集驱动化，下一步最值得做的是继续补 `mp-hot-snapshot` 的真实远程榜单适配与选择器稳健性；现在 `/collect` 里已经能看见具体 fallback mode，下一步应围绕这些 mode 定向补远程解析策略。
+- 如需继续采集驱动化，下一步最值得做的是继续补 `mp-hot-snapshot` 的真实远程榜单适配与选择器稳健性；信息架构这轮已经先清干净了，后面可以更专注地解决远程源本身。 
+- 如需继续采集驱动化，下一步最值得做的是继续补 `mp-hot-snapshot` 的真实远程榜单适配与选择器稳健性；但在当前默认体验里，它已经不再作为用户可见的默认来源出现。 

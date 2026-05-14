@@ -1,0 +1,1 @@
+"""Hot content collection framework."""

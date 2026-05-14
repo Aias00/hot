@@ -1,0 +1,220 @@
+{
+  "currentIssueLabel": "最新一期 2026-05-08",
+  "currentIssueDate": "2026 年 5 月 8",
+  "archiveGroups": [
+    {
+      "month": "2026 年 5 月 8",
+      "issues": [
+        {
+          "day": "8 日",
+          "title": "通过 API 中的新模型推进语音智能"
+        },
+        {
+          "day": "7 日",
+          "title": "SenseNova-U1开源8步蒸馏LoRA，推理速度大幅提升"
+        },
+        {
+          "day": "6 日",
+          "title": "GPT-5.5 Instant：更智能、更清晰、更个性化"
+        },
+        {
+          "day": "5 日",
+          "title": "语音克隆技术上线 真假难辨"
+        },
+        {
+          "day": "4 日",
+          "title": "从单张图像构建实时视频智能体：Runway Characters技术解析"
+        },
+        {
+          "day": "3 日",
+          "title": "模型别名新增“-latest”指向最新版本"
+        },
+        {
+          "day": "2 日",
+          "title": "GPT-5.5发布一周创营收新高"
+        },
+        {
+          "day": "1 日",
+          "title": "AntLingAGI开源Ling-2.6-1T模型，登陆 Hugging Face 平台"
+        }
+      ]
+    },
+    {
+      "month": "2026 年 4 月 9",
+      "issues": [
+        {
+          "day": "30 日",
+          "title": "旗舰指令模型快速高效执行的秘诀：可靠基础设施与优化"
+        },
+        {
+          "day": "29 日",
+          "title": "Mistral AI发布 Mistral Medium 3.5 模型及 Vibe 远程编程智能体"
+        },
+        {
+          "day": "28 日",
+          "title": "小米开源 MiMo-V2.5 双模型，支持百万上下文与商用"
+        },
+        {
+          "day": "27 日",
+          "title": "Mistral AI 发布 Workflows 公开预览版"
+        }
+      ]
+    }
+  ],
+  "masthead": {
+    "volume": "VOL.2026.05.08·30 STORIES·AI HOT DAILY",
+    "title": "AI HOT 日报",
+    "subtitle": "二〇二六年五月八日 星期五 DAILY · 每早八时",
+    "footerStats": [
+      {
+        "value": "17",
+        "label": "今日事件"
+      },
+      {
+        "value": "3",
+        "label": "一手报道"
+      },
+      {
+        "value": "24",
+        "label": "新模型"
+      },
+      {
+        "value": "8",
+        "label": "信源"
+      }
+    ]
+  },
+  "sections": [
+    {
+      "number": "01",
+      "title": "模型发布/更新",
+      "english": "Model Releases",
+      "stories": [
+        {
+          "title": "通过 API 中的新模型推进语音智能",
+          "href": "https://openai.com/",
+          "source": "官方 OpenAI：官网动态（RSS · 排除企业/客户案例）",
+          "summary": "OpenAI API 推出了新的实时语音模型，能够进行推理、翻译和语音转录，显著提升语音交互的自然度与智能水平。"
+        },
+        {
+          "title": "万亿参数指令模型 Ling-2.6-1T 发布",
+          "href": "https://x.com/AntLingAGI",
+          "source": "官方·X X：蚂蚁百灵 (@AntLingAGI)",
+          "summary": "Ling-2.6-1T 主打现实世界智能体，在保持 AIME26 与 SWE-bench Verified 表现的同时，把成本压低约 75%。"
+        },
+        {
+          "title": "Scaling Trusted Access for Cyber with GPT-5.5 and GPT-5.5-Cyber",
+          "href": "https://openai.com/",
+          "source": "官方 OpenAI：官网动态（RSS · 排除企业/客户案例）",
+          "summary": "OpenAI 扩展了网络安全可信访问计划，推出 GPT-5.5 和专用的 GPT-5.5-Cyber 模型。"
+        }
+      ]
+    },
+    {
+      "number": "02",
+      "title": "产品发布/更新",
+      "english": "Product",
+      "stories": [
+        {
+          "title": "在 Excel、PowerPoint、Word 和 Outlook 中与 Claude 协同工作",
+          "href": "https://claude.com/",
+          "source": "官方 Claude：Blog（网页）",
+          "summary": "Claude for Office 四件套已全面上市，支持跨文件连续对话上下文和企业统一部署。"
+        },
+        {
+          "title": "Amp 发布新版 CLI 工具 Neo，引领 Coding Agent 向长链路转型",
+          "href": "https://x.com/shao__meng",
+          "source": "X·KOL X：邵猛 (@shao__meng)",
+          "summary": "Neo 更强调远程控制、本地线程编排、插件 API 和默认允许操作的权限模型。"
+        },
+        {
+          "title": "Codex 插件现支持 Chrome 跨标签并行运行",
+          "href": "https://x.com/OpenAI",
+          "source": "官方·X X：OpenAI (@OpenAI)",
+          "summary": "Codex 可直接在 macOS 和 Windows 的 Chrome 中运行，并能后台跨标签并行工作。"
+        },
+        {
+          "title": "OpenAI 上线官方命令行工具 openai-cli，终端直接调用 API",
+          "href": "https://x.com/dotey",
+          "source": "X·KOL X：宝玉 (@dotey)",
+          "summary": "官方 CLI 支持 Responses API、结构化输出、图像与语音能力，方便接入自动化流程。"
+        }
+      ]
+    },
+    {
+      "number": "03",
+      "title": "行业动态",
+      "english": "Industry",
+      "stories": [
+        {
+          "title": "苹果首款 AI 可穿戴设备：内置摄像头的 AirPods 已进入 DVT 阶段",
+          "href": "https://www.ithome.com/",
+          "source": "综合资讯 IT之家（RSS）",
+          "summary": "带摄像头的 AirPods 预计最快 9 月搭载新 Siri 亮相，主打环境视觉理解与无障碍辅助。"
+        },
+        {
+          "title": "全国首例 AI 短剧侵权刑事案一审宣判",
+          "href": "https://www.ithome.com/",
+          "source": "综合资讯 IT之家（RSS）",
+          "summary": "盗录超过 1700 部 AI 短剧牟利构成侵犯著作权罪，法院认可提示词创作的独创性表达。"
+        },
+        {
+          "title": "首届 AI 创意大会即将登陆纽约",
+          "href": "https://x.com/Replit",
+          "source": "官方·X X：Replit (@Replit)",
+          "summary": "连接代码与文化的 AI 创意大会将于 6 月 17 至 18 日在纽约举行，主打创作者与开发者交叉场景。"
+        }
+      ]
+    },
+    {
+      "number": "04",
+      "title": "论文研究",
+      "english": "Research",
+      "stories": [
+        {
+          "title": "自然语言自编码器：将 Claude 的“想法”解码为文本",
+          "href": "https://www.anthropic.com/",
+          "source": "官方 Anthropic：Research（发表成果 · 网页）",
+          "summary": "Anthropic 提出自然语言自编码器方法，把激活值映射为文本解释，再重建回模型内部状态。"
+        },
+        {
+          "title": "结构化问询与可穿戴数据是 AI 医疗诊断的关键",
+          "href": "https://x.com/kimmonismus",
+          "source": "X·KOL X：Kim (@kimmonismus)",
+          "summary": "Google 基于 Fitbit 的实验表明，结构化访谈加可穿戴信号，比用户自由提问式对话更可靠。"
+        },
+        {
+          "title": "GLM-5V-Turbo 技术报告发布，迈向原生多模态智能体基础模型",
+          "href": "https://x.com/Zai_org",
+          "source": "官方·X X：智谱 Z.ai (@Zai_org)",
+          "summary": "技术报告聚焦模型设计、多模态训练、强化学习、工具链扩展以及与智能体框架集成。"
+        }
+      ]
+    },
+    {
+      "number": "05",
+      "title": "技巧与观点",
+      "english": "Tips & Takes",
+      "stories": [
+        {
+          "title": "OpenAI 政变之夜内部短信曝光：董事会为何执意赶走 Altman？",
+          "href": "https://x.com/dotey",
+          "source": "X·KOL X：宝玉 (@dotey)",
+          "summary": "Mira Murati 的庭审证词和董事会短信曝光，把 OpenAI 治理冲突和 AGI 权力争夺推到台前。"
+        },
+        {
+          "title": "Agent pull requests 无处不在：如何审查它们",
+          "href": "https://github.blog/",
+          "source": "官方 GitHub Blog",
+          "summary": "GitHub 给出了一套审查 AI 代理生成 PR 的方法学，重点放在逻辑漏洞、安全风险和技术债上。"
+        },
+        {
+          "title": "GPT 实时模型提示指南发布",
+          "href": "https://developers.openai.com/",
+          "source": "官方·X X：OpenAI Developers (@OpenAIDevs)",
+          "summary": "新提示指南覆盖推理强度、工具行为、不清晰音频处理和长会话状态维护等关键实践。"
+        }
+      ]
+    }
+  ]
+}
