@@ -18,6 +18,7 @@ dependencies = [
   "curl_cffi>=0.7",
   "xclienttransaction>=1.0.1",
   "beautifulsoup4>=4.12",
+  "PyJWT>=2.8",
 ]
 
 [project.optional-dependencies]

@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { NavLink } from "react-router-dom";
 
-import { navItems } from "../data/navigation";
+import { useNavigation } from "../hooks/useNavigation";
 import { themeOptions } from "../data/themeOptions";
 
 export default function Sidebar({ themePreference, onThemeChange }) {
   const [wechatImageMissing, setWechatImageMissing] = useState(false);
+  const { navItems } = useNavigation();
 
   return (
     <aside className="sidebar">

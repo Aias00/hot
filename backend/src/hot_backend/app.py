@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from x_atuo.automation.api import build_app as build_x_atuo_app
 
+from hot_backend.admin_routes import router as admin_router
 from hot_backend.collectors.api import router as collect_router
 from hot_backend.collectors.graph import build_hot_collect_graph
 from hot_backend.collectors.registry import SourceAdapterRegistry
@@ -28,6 +29,7 @@ def create_app():
 
     app.include_router(hot_router)
     app.include_router(collect_router)
+    app.include_router(admin_router)
     return app
 
 

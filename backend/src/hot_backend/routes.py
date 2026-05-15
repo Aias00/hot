@@ -7,6 +7,12 @@ from hot_backend.sqlite_store import get_store
 router = APIRouter()
 
 
+@router.get("/api/navigation")
+def get_navigation() -> list[dict]:
+    """Get navigation items for frontend."""
+    return get_store().list_navigation_items()
+
+
 @router.get("/api/feed")
 def get_feed(
     q: str = Query(default=""),

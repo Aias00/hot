@@ -117,6 +117,8 @@ class HotSQLiteStore:
             self._create_tables(connection)
             self._ensure_seeded(connection)
             self._ensure_collector_sources(connection)
+        # Seed navigation items (outside the connection context to use its own transaction)
+        self.seed_navigation_items()
 
     def _create_tables(self, connection: sqlite3.Connection) -> None:
         connection.executescript(
@@ -251,6 +253,17 @@ class HotSQLiteStore:
               created_at TEXT NOT NULL,
               updated_at TEXT NOT NULL,
               UNIQUE(source_id, external_id)
+            );
+
+            CREATE TABLE IF NOT EXISTS navigation_items (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              icon TEXT NOT NULL DEFAULT '',
+              label TEXT NOT NULL,
+              "to" TEXT NOT NULL,
+              sort_order INTEGER NOT NULL DEFAULT 0,
+              enabled INTEGER NOT NULL DEFAULT 1,
+              created_at TEXT NOT NULL,
+              updated_at TEXT NOT NULL
             );
             """
         )
@@ -1926,6 +1939,254 @@ class HotSQLiteStore:
                 )
 
         return len(items)
+
+    # ==================== Admin: Sources Management ====================
+
+    def list_sources(self) -> list[dict]:
+        """List all collector sources as dictionaries."""
+        with self.connect() as conn:
+            rows = conn.execute(
+                "SELECT source_id, adapter_kind, title, description, enabled, base_url, seed_urls_json, config_json, created_at, updated_at FROM collector_sources ORDER BY title"
+            ).fetchall()
+            return [
+                {
+                    "source_id": row[0],
+                    "adapter_kind": row[1],
+                    "title": row[2],
+                    "description": row[3],
+                    "enabled": bool(row[4]),
+                    "base_url": row[5],
+                    "seed_urls": json.loads(row[6]) if row[6] else [],
+                    "config": json.loads(row[7]) if row[7] else {},
+                    "created_at": row[8],
+                    "updated_at": row[9],
+                }
+                for row in rows
+            ]
+
+    def get_source(self, source_id: str) -> dict | None:
+        """Get a single source by ID."""
+        with self.connect() as conn:
+            row = conn.execute(
+                "SELECT source_id, adapter_kind, title, description, enabled, base_url, seed_urls_json, config_json, created_at, updated_at FROM collector_sources WHERE source_id = ?",
+                (source_id,),
+            ).fetchone()
+            if not row:
+                return None
+            return {
+                "source_id": row[0],
+                "adapter_kind": row[1],
+                "title": row[2],
+                "description": row[3],
+                "enabled": bool(row[4]),
+                "base_url": row[5],
+                "seed_urls": json.loads(row[6]) if row[6] else [],
+                "config": json.loads(row[7]) if row[7] else {},
+                "created_at": row[8],
+                "updated_at": row[9],
+            }
+
+    def create_source(self, source: dict) -> dict:
+        """Create a new source."""
+        now = datetime.now(timezone.utc).isoformat()
+        source_id = source.get("source_id")
+        with self.connect() as conn:
+            conn.execute(
+                """
+                INSERT INTO collector_sources (source_id, adapter_kind, title, description, enabled, base_url, seed_urls_json, config_json, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    source_id,
+                    source.get("adapter_kind", "rss-generic"),
+                    source.get("title", ""),
+                    source.get("description", ""),
+                    1 if source.get("enabled", True) else 0,
+                    source.get("base_url"),
+                    json.dumps(source.get("seed_urls", []), ensure_ascii=False),
+                    json.dumps(source.get("config", {}), ensure_ascii=False),
+                    now,
+                    now,
+                ),
+            )
+        return self.get_source(source_id)  # type: ignore
+
+    def update_source(self, source_id: str, updates: dict) -> dict:
+        """Update an existing source."""
+        now = datetime.now(timezone.utc).isoformat()
+        existing = self.get_source(source_id)
+        if not existing:
+            raise ValueError(f"Source '{source_id}' not found")
+
+        # Build update query dynamically
+        fields = []
+        values = []
+        if "title" in updates:
+            fields.append("title = ?")
+            values.append(updates["title"])
+        if "description" in updates:
+            fields.append("description = ?")
+            values.append(updates["description"])
+        if "enabled" in updates:
+            fields.append("enabled = ?")
+            values.append(1 if updates["enabled"] else 0)
+        if "base_url" in updates:
+            fields.append("base_url = ?")
+            values.append(updates["base_url"])
+        if "seed_urls" in updates:
+            fields.append("seed_urls_json = ?")
+            values.append(json.dumps(updates["seed_urls"], ensure_ascii=False))
+        if "config" in updates:
+            fields.append("config_json = ?")
+            values.append(json.dumps(updates["config"], ensure_ascii=False))
+        if "adapter_kind" in updates:
+            fields.append("adapter_kind = ?")
+            values.append(updates["adapter_kind"])
+
+        if fields:
+            fields.append("updated_at = ?")
+            values.append(now)
+            values.append(source_id)
+            with self.connect() as conn:
+                conn.execute(
+                    f"UPDATE collector_sources SET {', '.join(fields)} WHERE source_id = ?",
+                    values,
+                )
+        return self.get_source(source_id)  # type: ignore
+
+    def delete_source(self, source_id: str) -> None:
+        """Delete a source and its related data."""
+        with self.connect() as conn:
+            conn.execute("DELETE FROM collector_checkpoints WHERE source_id = ?", (source_id,))
+            conn.execute("DELETE FROM collector_runs WHERE source_id = ?", (source_id,))
+            conn.execute("DELETE FROM collector_sources WHERE source_id = ?", (source_id,))
+
+    # ==================== Admin: Navigation Management ====================
+
+    def list_navigation_items(self) -> list[dict]:
+        """List all navigation items, sorted by sort_order."""
+        with self.connect() as conn:
+            rows = conn.execute(
+                'SELECT id, icon, label, "to", sort_order, enabled, created_at, updated_at FROM navigation_items ORDER BY sort_order'
+            ).fetchall()
+            return [
+                {
+                    "id": row[0],
+                    "icon": row[1],
+                    "label": row[2],
+                    "to": row[3],
+                    "sort_order": row[4],
+                    "enabled": bool(row[5]),
+                    "created_at": row[6],
+                    "updated_at": row[7],
+                }
+                for row in rows
+            ]
+
+    def get_navigation_item(self, item_id: int) -> dict | None:
+        """Get a single navigation item by ID."""
+        with self.connect() as conn:
+            row = conn.execute(
+                'SELECT id, icon, label, "to", sort_order, enabled, created_at, updated_at FROM navigation_items WHERE id = ?',
+                (item_id,),
+            ).fetchone()
+            if not row:
+                return None
+            return {
+                "id": row[0],
+                "icon": row[1],
+                "label": row[2],
+                "to": row[3],
+                "sort_order": row[4],
+                "enabled": bool(row[5]),
+                "created_at": row[6],
+                "updated_at": row[7],
+            }
+
+    def create_navigation_item(self, item: dict) -> dict:
+        """Create a new navigation item."""
+        now = datetime.now(timezone.utc).isoformat()
+        # Get max sort_order
+        with self.connect() as conn:
+            max_order = conn.execute("SELECT COALESCE(MAX(sort_order), -1) FROM navigation_items").fetchone()[0]
+            sort_order = item.get("sort_order", max_order + 1)
+            cursor = conn.execute(
+                """
+                INSERT INTO navigation_items (icon, label, "to", sort_order, enabled, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    item.get("icon", ""),
+                    item.get("label", ""),
+                    item.get("to", ""),
+                    sort_order,
+                    1 if item.get("enabled", True) else 0,
+                    now,
+                    now,
+                ),
+            )
+            item_id = cursor.lastrowid
+        return self.get_navigation_item(item_id)  # type: ignore
+
+    def update_navigation_item(self, item_id: int, updates: dict) -> dict:
+        """Update an existing navigation item."""
+        now = datetime.now(timezone.utc).isoformat()
+        existing = self.get_navigation_item(item_id)
+        if not existing:
+            raise ValueError(f"Navigation item '{item_id}' not found")
+
+        fields = []
+        values = []
+        if "icon" in updates:
+            fields.append("icon = ?")
+            values.append(updates["icon"])
+        if "label" in updates:
+            fields.append("label = ?")
+            values.append(updates["label"])
+        if "to" in updates:
+            fields.append("to = ?")
+            values.append(updates["to"])
+        if "sort_order" in updates:
+            fields.append("sort_order = ?")
+            values.append(updates["sort_order"])
+        if "enabled" in updates:
+            fields.append("enabled = ?")
+            values.append(1 if updates["enabled"] else 0)
+
+        if fields:
+            fields.append("updated_at = ?")
+            values.append(now)
+            values.append(item_id)
+            with self.connect() as conn:
+                conn.execute(
+                    f"UPDATE navigation_items SET {', '.join(fields)} WHERE id = ?",
+                    values,
+                )
+        return self.get_navigation_item(item_id)  # type: ignore
+
+    def delete_navigation_item(self, item_id: int) -> None:
+        """Delete a navigation item."""
+        with self.connect() as conn:
+            conn.execute("DELETE FROM navigation_items WHERE id = ?", (item_id,))
+
+    def seed_navigation_items(self) -> None:
+        """Seed default navigation items if table is empty."""
+        now = datetime.now(timezone.utc).isoformat()
+        default_items = [
+            {"icon": "◫", "label": "导航中心", "to": "/nav-hub", "sort_order": 0},
+            {"icon": "☰", "label": "全部 AI 动态", "to": "/all", "sort_order": 1},
+        ]
+        with self.connect() as conn:
+            count = conn.execute("SELECT COUNT(*) FROM navigation_items").fetchone()[0]
+            if count == 0:
+                for item in default_items:
+                    conn.execute(
+                        """
+                        INSERT INTO navigation_items (icon, label, "to", sort_order, enabled, created_at, updated_at)
+                        VALUES (?, ?, ?, ?, ?, ?, ?)
+                        """,
+                        (item["icon"], item["label"], item["to"], item["sort_order"], 1, now, now),
+                    )
 
 
 @lru_cache(maxsize=1)

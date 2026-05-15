@@ -52,6 +52,18 @@
   --text-2: #7a72a8;
   --text-soft-medium: rgba(17, 17, 17, 0.56);
   --text-soft-strong: rgba(17, 17, 17, 0.82);
+  /* Admin panel colors */
+  --color-primary: #6f68d8;
+  --color-text: #111111;
+  --color-text-secondary: #7a72a8;
+  --color-background: #fcf9f3;
+  --color-surface: #ffffff;
+  --color-border: rgba(111, 104, 216, 0.13);
+  --color-hover: rgba(111, 104, 216, 0.08);
+  --color-success: #42a57a;
+  --color-success-bg: rgba(66, 165, 122, 0.1);
+  --color-error: #f0687a;
+  --color-error-bg: rgba(240, 104, 122, 0.1);
   --theme-transition:
     background-color 220ms ease,
     background 220ms ease,
@@ -88,4 +100,16 @@ html[data-theme="dark"] {
   --shadow-card: 0 14px 32px rgba(6, 4, 18, 0.28);
   --shadow-card-hover: 0 18px 40px rgba(6, 4, 18, 0.34);
   --shadow-soft: 0 8px 18px rgba(6, 4, 18, 0.22);
+  /* Admin panel dark theme colors */
+  --color-primary: #a39cff;
+  --color-text: #faf8ff;
+  --color-text-secondary: #9f98c7;
+  --color-background: #0f0d1a;
+  --color-surface: #171429;
+  --color-border: rgba(143, 136, 255, 0.18);
+  --color-hover: rgba(255, 255, 255, 0.06);
+  --color-success: #42a57a;
+  --color-success-bg: rgba(66, 165, 122, 0.15);
+  --color-error: #f0687a;
+  --color-error-bg: rgba(240, 104, 122, 0.15);
 }
