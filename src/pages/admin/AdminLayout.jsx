@@ -13,7 +13,8 @@ export default function AdminLayout() {
   const navItems = [
     { to: "/admin", label: "概览", end: true },
     { to: "/admin/sources", label: "采集源" },
-    { to: "/admin/navigation", label: "导航" },
+    { to: "/admin/navigation", label: "侧边导航" },
+    { to: "/admin/nav-hub", label: "导航中心" },
   ];
 
   return (

@@ -13,6 +13,24 @@ def get_navigation() -> list[dict]:
     return get_store().list_navigation_items()
 
 
+@router.get("/api/nav-hub")
+def get_nav_hub() -> list[dict]:
+    """Get nav hub categories with links for frontend."""
+    categories = get_store().list_nav_hub_categories()
+    # Filter enabled categories and links
+    return [
+        {
+            "id": cat["id"],
+            "name": cat["name"],
+            "icon": cat["icon"],
+            "color": cat["color"],
+            "links": [link for link in cat["links"] if link["enabled"]],
+        }
+        for cat in categories
+        if cat["enabled"]
+    ]
+
+
 @router.get("/api/feed")
 def get_feed(
     q: str = Query(default=""),

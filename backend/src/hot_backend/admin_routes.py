@@ -230,3 +230,147 @@ def reorder_navigation(
     for item in items:
         store.update_navigation_item(item["id"], {"sort_order": item["sort_order"]})
     return store.list_navigation_items()
+
+
+# ==================== Nav Hub Management ====================
+
+
+@router.get("/nav-hub/categories")
+def list_nav_hub_categories(
+    _: TokenPayload = Depends(get_current_admin),
+) -> list[dict]:
+    """List all nav hub categories with their links."""
+    from hot_backend.sqlite_store import get_store
+
+    return get_store().list_nav_hub_categories()
+
+
+@router.post("/nav-hub/categories")
+def create_nav_hub_category(
+    category: dict,
+    _: TokenPayload = Depends(get_current_admin),
+) -> dict:
+    """Create a new nav hub category."""
+    from hot_backend.sqlite_store import get_store
+
+    return get_store().create_nav_hub_category(category)
+
+
+@router.put("/nav-hub/categories/{category_id}")
+def update_nav_hub_category(
+    category_id: str,
+    category: dict,
+    _: TokenPayload = Depends(get_current_admin),
+) -> dict:
+    """Update a nav hub category."""
+    from hot_backend.sqlite_store import get_store
+
+    store = get_store()
+    existing = store.get_nav_hub_category(category_id)
+    if not existing:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Category '{category_id}' not found",
+        )
+    return store.update_nav_hub_category(category_id, category)
+
+
+@router.delete("/nav-hub/categories/{category_id}")
+def delete_nav_hub_category(
+    category_id: str,
+    _: TokenPayload = Depends(get_current_admin),
+) -> dict:
+    """Delete a nav hub category and all its links."""
+    from hot_backend.sqlite_store import get_store
+
+    store = get_store()
+    existing = store.get_nav_hub_category(category_id)
+    if not existing:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Category '{category_id}' not found",
+        )
+    store.delete_nav_hub_category(category_id)
+    return {"deleted": True}
+
+
+@router.patch("/nav-hub/categories/{category_id}/toggle")
+def toggle_nav_hub_category(
+    category_id: str,
+    _: TokenPayload = Depends(get_current_admin),
+) -> dict:
+    """Toggle nav hub category enabled status."""
+    from hot_backend.sqlite_store import get_store
+
+    store = get_store()
+    existing = store.get_nav_hub_category(category_id)
+    if not existing:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Category '{category_id}' not found",
+        )
+    new_enabled = not existing.get("enabled", True)
+    return store.update_nav_hub_category(category_id, {"enabled": new_enabled})
+
+
+@router.post("/nav-hub/links")
+def create_nav_hub_link(
+    link: dict,
+    _: TokenPayload = Depends(get_current_admin),
+) -> dict:
+    """Create a new nav hub link."""
+    from hot_backend.sqlite_store import get_store
+
+    return get_store().create_nav_hub_link(link)
+
+
+@router.put("/nav-hub/links/{link_id}")
+def update_nav_hub_link(
+    link_id: int,
+    link: dict,
+    _: TokenPayload = Depends(get_current_admin),
+) -> dict:
+    """Update a nav hub link."""
+    from hot_backend.sqlite_store import get_store
+
+    store = get_store()
+    existing = store.get_nav_hub_link(link_id)
+    if not existing:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Link '{link_id}' not found",
+        )
+    return store.update_nav_hub_link(link_id, link)
+
+
+@router.delete("/nav-hub/links/{link_id}")
+def delete_nav_hub_link(
+    link_id: int,
+    _: TokenPayload = Depends(get_current_admin),
+) -> dict:
+    """Delete a nav hub link."""
+    from hot_backend.sqlite_store import get_store
+
+    store = get_store()
+    existing = store.get_nav_hub_link(link_id)
+    if not existing:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Link '{link_id}' not found",
+        )
+    store.delete_nav_hub_link(link_id)
+    return {"deleted": True}
+
+
+@router.put("/nav-hub/categories/{category_id}/links/reorder")
+def reorder_nav_hub_links(
+    category_id: str,
+    links: list[dict],
+    _: TokenPayload = Depends(get_current_admin),
+) -> dict:
+    """Reorder links within a category. Expects [{'id': 1, 'sort_order': 0}, ...]"""
+    from hot_backend.sqlite_store import get_store
+
+    store = get_store()
+    store.reorder_nav_hub_links(category_id, links)
+    return {"reordered": True}

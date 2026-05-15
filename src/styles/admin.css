@@ -415,3 +415,67 @@
   font-size: 14px;
   color: var(--color-text-secondary);
 }
+
+/* Nav Hub Admin */
+.nav-hub-admin {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.nav-hub-admin__category {
+  background: var(--color-surface);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.nav-hub-admin__category-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px;
+  border-left: 3px solid var(--hub-accent, var(--color-primary));
+}
+
+.nav-hub-admin__category-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.nav-hub-admin__category-icon {
+  width: 24px;
+  height: 24px;
+  color: var(--hub-accent, var(--color-primary));
+}
+
+.nav-hub-admin__category-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.nav-hub-admin__category-name {
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.nav-hub-admin__category-count {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+.nav-hub-admin__category-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.nav-hub-admin__links {
+  padding: 0 16px 16px;
+}
+
+.nav-hub-admin__empty {
+  padding: 24px;
+  text-align: center;
+  color: var(--color-text-secondary);
+}

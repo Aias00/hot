@@ -265,6 +265,30 @@ class HotSQLiteStore:
               created_at TEXT NOT NULL,
               updated_at TEXT NOT NULL
             );
+
+            CREATE TABLE IF NOT EXISTS nav_hub_categories (
+              id TEXT PRIMARY KEY,
+              name TEXT NOT NULL,
+              icon TEXT NOT NULL,
+              color TEXT NOT NULL,
+              sort_order INTEGER NOT NULL DEFAULT 0,
+              enabled INTEGER NOT NULL DEFAULT 1,
+              created_at TEXT NOT NULL,
+              updated_at TEXT NOT NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS nav_hub_links (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              category_id TEXT NOT NULL,
+              title TEXT NOT NULL,
+              url TEXT NOT NULL,
+              description TEXT NOT NULL,
+              sort_order INTEGER NOT NULL DEFAULT 0,
+              enabled INTEGER NOT NULL DEFAULT 1,
+              created_at TEXT NOT NULL,
+              updated_at TEXT NOT NULL,
+              FOREIGN KEY (category_id) REFERENCES nav_hub_categories(id)
+            );
             """
         )
 
@@ -2187,6 +2211,203 @@ class HotSQLiteStore:
                         """,
                         (item["icon"], item["label"], item["to"], item["sort_order"], 1, now, now),
                     )
+
+    # ==================== Nav Hub Categories ====================
+
+    def list_nav_hub_categories(self) -> list[dict]:
+        """List all nav hub categories with their links."""
+        with self.connect() as conn:
+            cat_rows = conn.execute(
+                "SELECT id, name, icon, color, sort_order, enabled, created_at, updated_at FROM nav_hub_categories ORDER BY sort_order"
+            ).fetchall()
+            categories = []
+            for row in cat_rows:
+                cat = {
+                    "id": row[0],
+                    "name": row[1],
+                    "icon": row[2],
+                    "color": row[3],
+                    "sort_order": row[4],
+                    "enabled": bool(row[5]),
+                    "created_at": row[6],
+                    "updated_at": row[7],
+                    "links": [],
+                }
+                link_rows = conn.execute(
+                    "SELECT id, title, url, description, sort_order, enabled FROM nav_hub_links WHERE category_id = ? ORDER BY sort_order",
+                    (row[0],),
+                ).fetchall()
+                cat["links"] = [
+                    {
+                        "id": link[0],
+                        "title": link[1],
+                        "url": link[2],
+                        "description": link[3],
+                        "sort_order": link[4],
+                        "enabled": bool(link[5]),
+                    }
+                    for link in link_rows
+                ]
+                categories.append(cat)
+            return categories
+
+    def get_nav_hub_category(self, category_id: str) -> dict | None:
+        """Get a single nav hub category by ID."""
+        with self.connect() as conn:
+            row = conn.execute(
+                "SELECT id, name, icon, color, sort_order, enabled, created_at, updated_at FROM nav_hub_categories WHERE id = ?",
+                (category_id,),
+            ).fetchone()
+            if not row:
+                return None
+            return {
+                "id": row[0],
+                "name": row[1],
+                "icon": row[2],
+                "color": row[3],
+                "sort_order": row[4],
+                "enabled": bool(row[5]),
+                "created_at": row[6],
+                "updated_at": row[7],
+            }
+
+    def create_nav_hub_category(self, category: dict) -> dict:
+        """Create a new nav hub category."""
+        now = datetime.now(timezone.utc).isoformat()
+        with self.connect() as conn:
+            max_order = conn.execute("SELECT COALESCE(MAX(sort_order), -1) FROM nav_hub_categories").fetchone()[0]
+            conn.execute(
+                """
+                INSERT INTO nav_hub_categories (id, name, icon, color, sort_order, enabled, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    category["id"],
+                    category["name"],
+                    category.get("icon", ""),
+                    category.get("color", "#7dd3fc"),
+                    category.get("sort_order", max_order + 1),
+                    1 if category.get("enabled", True) else 0,
+                    now,
+                    now,
+                ),
+            )
+        return self.get_nav_hub_category(category["id"])  # type: ignore
+
+    def update_nav_hub_category(self, category_id: str, updates: dict) -> dict:
+        """Update a nav hub category."""
+        now = datetime.now(timezone.utc).isoformat()
+        existing = self.get_nav_hub_category(category_id)
+        if not existing:
+            raise ValueError(f"Category '{category_id}' not found")
+
+        fields = []
+        values = []
+        for field in ["name", "icon", "color", "sort_order", "enabled"]:
+            if field in updates:
+                fields.append(f"{field} = ?")
+                values.append(updates[field] if field != "enabled" else (1 if updates[field] else 0))
+
+        if fields:
+            fields.append("updated_at = ?")
+            values.append(now)
+            values.append(category_id)
+            with self.connect() as conn:
+                conn.execute(f"UPDATE nav_hub_categories SET {', '.join(fields)} WHERE id = ?", values)
+        return self.get_nav_hub_category(category_id)  # type: ignore
+
+    def delete_nav_hub_category(self, category_id: str) -> None:
+        """Delete a nav hub category and all its links."""
+        with self.connect() as conn:
+            conn.execute("DELETE FROM nav_hub_links WHERE category_id = ?", (category_id,))
+            conn.execute("DELETE FROM nav_hub_categories WHERE id = ?", (category_id,))
+
+    # ==================== Nav Hub Links ====================
+
+    def get_nav_hub_link(self, link_id: int) -> dict | None:
+        """Get a single nav hub link by ID."""
+        with self.connect() as conn:
+            row = conn.execute(
+                "SELECT id, category_id, title, url, description, sort_order, enabled, created_at, updated_at FROM nav_hub_links WHERE id = ?",
+                (link_id,),
+            ).fetchone()
+            if not row:
+                return None
+            return {
+                "id": row[0],
+                "category_id": row[1],
+                "title": row[2],
+                "url": row[3],
+                "description": row[4],
+                "sort_order": row[5],
+                "enabled": bool(row[6]),
+                "created_at": row[7],
+                "updated_at": row[8],
+            }
+
+    def create_nav_hub_link(self, link: dict) -> dict:
+        """Create a new nav hub link."""
+        now = datetime.now(timezone.utc).isoformat()
+        with self.connect() as conn:
+            max_order = conn.execute(
+                "SELECT COALESCE(MAX(sort_order), -1) FROM nav_hub_links WHERE category_id = ?",
+                (link["category_id"],),
+            ).fetchone()[0]
+            cursor = conn.execute(
+                """
+                INSERT INTO nav_hub_links (category_id, title, url, description, sort_order, enabled, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    link["category_id"],
+                    link["title"],
+                    link["url"],
+                    link.get("description", ""),
+                    link.get("sort_order", max_order + 1),
+                    1 if link.get("enabled", True) else 0,
+                    now,
+                    now,
+                ),
+            )
+            link_id = cursor.lastrowid
+        return self.get_nav_hub_link(link_id)  # type: ignore
+
+    def update_nav_hub_link(self, link_id: int, updates: dict) -> dict:
+        """Update a nav hub link."""
+        now = datetime.now(timezone.utc).isoformat()
+        existing = self.get_nav_hub_link(link_id)
+        if not existing:
+            raise ValueError(f"Link '{link_id}' not found")
+
+        fields = []
+        values = []
+        for field in ["category_id", "title", "url", "description", "sort_order", "enabled"]:
+            if field in updates:
+                fields.append(f"{field} = ?")
+                values.append(updates[field] if field != "enabled" else (1 if updates[field] else 0))
+
+        if fields:
+            fields.append("updated_at = ?")
+            values.append(now)
+            values.append(link_id)
+            with self.connect() as conn:
+                conn.execute(f"UPDATE nav_hub_links SET {', '.join(fields)} WHERE id = ?", values)
+        return self.get_nav_hub_link(link_id)  # type: ignore
+
+    def delete_nav_hub_link(self, link_id: int) -> None:
+        """Delete a nav hub link."""
+        with self.connect() as conn:
+            conn.execute("DELETE FROM nav_hub_links WHERE id = ?", (link_id,))
+
+    def reorder_nav_hub_links(self, category_id: str, link_orders: list[dict]) -> None:
+        """Reorder links within a category."""
+        now = datetime.now(timezone.utc).isoformat()
+        with self.connect() as conn:
+            for item in link_orders:
+                conn.execute(
+                    "UPDATE nav_hub_links SET sort_order = ?, updated_at = ? WHERE id = ? AND category_id = ?",
+                    (item["sort_order"], now, item["id"], category_id),
+                )
 
 
 @lru_cache(maxsize=1)

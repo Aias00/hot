@@ -1,18 +1,35 @@
-import { useMemo, useState } from "react";
-
-import { navHubCategories } from "../data/navHubLinks";
+import { useEffect, useMemo, useState } from "react";
 
 export default function NavHubPage() {
+  const [categories, setCategories] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState(null);
+
+  useEffect(() => {
+    async function loadCategories() {
+      try {
+        const response = await fetch("/api/nav-hub");
+        if (response.ok) {
+          const data = await response.json();
+          setCategories(data);
+        }
+      } catch (error) {
+        console.error("Failed to load nav hub categories:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadCategories();
+  }, []);
 
   const filteredCategories = useMemo(() => {
     const query = search.toLowerCase().trim();
     if (!query && !activeCategory) {
-      return navHubCategories;
+      return categories;
     }
 
-    return navHubCategories
+    return categories
       .filter((category) => !activeCategory || category.id === activeCategory)
       .map((category) => ({
         ...category,
@@ -25,7 +42,7 @@ export default function NavHubPage() {
           : category.links,
       }))
       .filter((category) => category.links.length > 0);
-  }, [activeCategory, search]);
+  }, [activeCategory, search, categories]);
 
   const hour = new Date().getHours();
   const greeting =
@@ -75,7 +92,7 @@ export default function NavHubPage() {
             >
               全部
             </button>
-            {navHubCategories.map((category) => (
+            {categories.map((category) => (
               <button
                 key={category.id}
                 className={`nav-hub-pill ${activeCategory === category.id ? "is-active" : ""}`}
@@ -92,7 +109,11 @@ export default function NavHubPage() {
         </header>
 
         <main className="nav-hub-grid-list">
-          {filteredCategories.length === 0 ? (
+          {loading ? (
+            <div className="nav-hub-empty">
+              <p>加载中...</p>
+            </div>
+          ) : filteredCategories.length === 0 ? (
             <div className="nav-hub-empty">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
                 <circle cx="11" cy="11" r="8" />
