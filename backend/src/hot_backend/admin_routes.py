@@ -395,9 +395,9 @@ def update_schedule(
     _: TokenPayload = Depends(get_current_admin),
 ) -> dict:
     """Update collector schedule configuration."""
-    from hot_backend.scheduler import update_scheduler
+    from hot_backend.scheduler import update_scheduler_config
 
-    return update_scheduler(
+    return update_scheduler_config(
         enabled=config.get("enabled"),
         interval_minutes=config.get("interval_minutes"),
     )

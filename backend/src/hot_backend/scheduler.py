@@ -5,7 +5,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.interval import IntervalTrigger
@@ -21,6 +21,7 @@ logger = logging.getLogger(__name__)
 
 scheduler = AsyncIOScheduler()
 scheduler_job_id = "rss_collector"
+_scheduler_started = False
 
 
 def get_registry() -> SourceAdapterRegistry:
@@ -88,7 +89,6 @@ async def scheduled_collection():
         result = await run_collection()
 
         # Calculate next run time
-        from datetime import timedelta
         interval = schedule.get("interval_minutes", 60)
         next_run = datetime.now(timezone.utc) + timedelta(minutes=interval)
 
@@ -100,6 +100,19 @@ async def scheduled_collection():
     except Exception as e:
         logger.error(f"Scheduled collection failed: {e}")
         store.update_collector_schedule({"last_run_status": json.dumps({"error": str(e)}, ensure_ascii=False)})
+
+
+def ensure_scheduler_started():
+    """Ensure the scheduler is started (call from async context)."""
+    global _scheduler_started
+    if not _scheduler_started and not scheduler.running:
+        try:
+            scheduler.start()
+            _scheduler_started = True
+            logger.info("Scheduler started")
+        except RuntimeError:
+            # No event loop yet, will start later
+            pass
 
 
 def start_scheduler():
@@ -123,9 +136,8 @@ def start_scheduler():
         replace_existing=True,
     )
 
-    if not scheduler.running:
-        scheduler.start()
-        logger.info(f"Scheduler started with {interval_minutes} minute interval")
+    ensure_scheduler_started()
+    logger.info(f"Scheduler configured with {interval_minutes} minute interval")
 
 
 def stop_scheduler():
@@ -137,8 +149,8 @@ def stop_scheduler():
         logger.info("Scheduler stopped")
 
 
-def update_scheduler(enabled: bool | None = None, interval_minutes: int | None = None):
-    """Update scheduler configuration."""
+def update_scheduler_config(enabled: bool | None = None, interval_minutes: int | None = None) -> dict:
+    """Update scheduler configuration (sync version - just updates DB)."""
     store = get_store()
 
     updates = {}
@@ -152,14 +164,26 @@ def update_scheduler(enabled: bool | None = None, interval_minutes: int | None =
     # Get updated config
     schedule = store.get_collector_schedule()
 
+    # Calculate next run time if enabling
+    if schedule.get("enabled") and interval_minutes:
+        next_run = datetime.now(timezone.utc) + timedelta(minutes=interval_minutes)
+        store.update_collector_schedule({"next_run_at": next_run.isoformat()})
+    elif not schedule.get("enabled"):
+        store.update_collector_schedule({"next_run_at": None})
+
+    return store.get_collector_schedule()
+
+
+async def apply_scheduler_config():
+    """Apply scheduler config (must be called from async context)."""
+    store = get_store()
+    schedule = store.get_collector_schedule()
+
     if schedule.get("enabled"):
-        # Start or restart scheduler
+        interval = schedule.get("interval_minutes", 60)
+
         if scheduler.get_job(scheduler_job_id):
             scheduler.remove_job(scheduler_job_id)
-
-        from datetime import timedelta
-        interval = schedule.get("interval_minutes", 60)
-        next_run = datetime.now(timezone.utc) + timedelta(minutes=interval)
 
         scheduler.add_job(
             scheduled_collection,
@@ -167,16 +191,11 @@ def update_scheduler(enabled: bool | None = None, interval_minutes: int | None =
             id=scheduler_job_id,
             replace_existing=True,
         )
-        store.update_collector_schedule({"next_run_at": next_run.isoformat()})
 
         if not scheduler.running:
             scheduler.start()
-        logger.info(f"Scheduler updated: enabled={schedule['enabled']}, interval={interval}min")
+            logger.info(f"Scheduler started with {interval}min interval")
     else:
-        # Stop scheduler
         if scheduler.get_job(scheduler_job_id):
             scheduler.remove_job(scheduler_job_id)
-        store.update_collector_schedule({"next_run_at": None})
         logger.info("Scheduler disabled")
-
-    return schedule

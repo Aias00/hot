@@ -2483,7 +2483,6 @@ class HotSQLiteStore:
             if fields:
                 fields.append("updated_at = ?")
                 values.append(now)
-                values.append(1)
                 conn.execute(f"UPDATE collector_schedule SET {', '.join(fields)} WHERE id = 1", values)
 
         return self.get_collector_schedule()

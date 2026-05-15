@@ -60,6 +60,26 @@ export default function SchedulePage() {
     }
   };
 
+  const handleToggle = async () => {
+    const newEnabled = !schedule?.enabled;
+    setSaving(true);
+    try {
+      const response = await authFetch("/api/admin/schedule", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ enabled: newEnabled, interval_minutes: form.interval_minutes }),
+      });
+      const data = await response.json();
+      setSchedule(data);
+      setForm({ ...form, enabled: data.enabled });
+    } catch (error) {
+      console.error("Failed to toggle:", error);
+      alert("切换失败: " + error.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const handleRunNow = async () => {
     setRunning(true);
     setLastRunResult(null);
@@ -93,28 +113,12 @@ export default function SchedulePage() {
           <div className="schedule-config__status-item">
             <span className="schedule-config__label">状态</span>
             <button
+              type="button"
               className={`schedule-config__toggle ${schedule?.enabled ? "schedule-config__toggle--on" : ""}`}
-              onClick={async () => {
-                const newEnabled = !schedule?.enabled;
-                setSaving(true);
-                try {
-                  const response = await authFetch("/api/admin/schedule", {
-                    method: "PUT",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ enabled: newEnabled, interval_minutes: form.interval_minutes }),
-                  });
-                  const data = await response.json();
-                  setSchedule(data);
-                  setForm({ ...form, enabled: data.enabled });
-                } catch (error) {
-                  console.error("Failed to toggle:", error);
-                } finally {
-                  setSaving(false);
-                }
-              }}
+              onClick={handleToggle}
               disabled={saving}
             >
-              {schedule?.enabled ? "已启用" : "已禁用"}
+              {saving ? "处理中..." : schedule?.enabled ? "已启用" : "已禁用"}
             </button>
           </div>
           {schedule?.next_run_at && (
