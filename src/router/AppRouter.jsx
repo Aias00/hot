@@ -8,6 +8,7 @@ import DailyPage from "../pages/DailyPage";
 import FeedPage from "../pages/FeedPage";
 import InfoPage from "../pages/InfoPage";
 import MpPage from "../pages/MpPage";
+import NavHubPage from "../pages/NavHubPage";
 
 export default function AppRouter({
   themePreference,
@@ -37,6 +38,7 @@ export default function AppRouter({
           <Route path="/mp" element={<MpPage />} />
           <Route path="/collect" element={<CollectorSourcesPage />} />
           <Route path="/collected" element={<CollectedHotPage />} />
+          <Route path="/nav-hub" element={<NavHubPage />} />
           {infoPageDefinitions.map((page) => (
             <Route
               key={page.path}

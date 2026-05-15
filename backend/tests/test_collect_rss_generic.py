@@ -258,6 +258,36 @@ def test_execute_sample_rss_source_persists_to_feed(tmp_path: Path):
         _purge_test_source(source_id)
 
 
+def test_feed_endpoint_supports_query_and_pagination():
+    client = TestClient(create_app())
+    source_id = f"rss-feed-page-{uuid4().hex[:8]}"
+
+    try:
+        _create_sample_rss_source(client, source_id)
+        response = client.post(
+            "/api/collect/execute",
+            json={
+                "source_id": source_id,
+                "dry_run": False,
+                "limit": 2,
+            },
+        )
+        assert response.status_code == 200
+
+        feed_response = client.get(
+            "/api/feed?q=realtime%20voice&page=1&limit=1"
+        )
+        assert feed_response.status_code == 200
+        payload = feed_response.json()
+        assert payload["count"] == 1
+        assert payload["page"] == 1
+        assert payload["page_size"] == 1
+        assert payload["total_count"] >= 1
+        assert payload["items"][0]["title"] == "OpenAI ships a smaller realtime voice model"
+    finally:
+        _purge_test_source(source_id)
+
+
 def test_can_create_and_execute_configurable_rss_source(tmp_path: Path):
     feed_path = tmp_path / "custom-feed.xml"
     feed_path.write_text(

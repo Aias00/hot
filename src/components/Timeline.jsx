@@ -31,7 +31,7 @@ export default function Timeline({
       {progressive && hasMore ? (
         <div className="timeline-load-more" ref={sentinelRef}>
           <button className="timeline-load-pill" onClick={onLoadMore} type="button">
-            继续下拉，自动加载 5 条
+            继续下拉，加载更多动态
           </button>
         </div>
       ) : null}

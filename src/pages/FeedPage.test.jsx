@@ -2,10 +2,15 @@ import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import FeedPage from "./FeedPage";
+import { useInfiniteFeedItems } from "../hooks/useInfiniteFeedItems";
 import { useApiFeedItems } from "../hooks/useUpstreamFeedItems";
 
 vi.mock("../hooks/useUpstreamFeedItems", () => ({
   useApiFeedItems: vi.fn(),
+}));
+
+vi.mock("../hooks/useInfiniteFeedItems", () => ({
+  useInfiniteFeedItems: vi.fn(),
 }));
 
 afterEach(() => {
@@ -53,6 +58,13 @@ describe("FeedPage", () => {
       items,
       loadError: "",
     });
+    useInfiniteFeedItems.mockReturnValue({
+      items: [],
+      loadError: "",
+      hasNext: false,
+      isLoading: false,
+      loadMore: vi.fn(),
+    });
 
     render(
       <FeedPage
@@ -73,9 +85,13 @@ describe("FeedPage", () => {
   });
 
   it("renders the full merged timeline on /all without the extra summary panels", async () => {
-    useApiFeedItems.mockReturnValue({
+    useApiFeedItems.mockReturnValue({ items: [], loadError: "" });
+    useInfiniteFeedItems.mockReturnValue({
       items,
       loadError: "",
+      hasNext: true,
+      isLoading: false,
+      loadMore: vi.fn(),
     });
 
     render(
@@ -97,5 +113,6 @@ describe("FeedPage", () => {
     expect(screen.queryByText("采集 1 · 静态 1")).not.toBeInTheDocument();
     expect(screen.queryByText("这里是合并时间线，不是纯采集归档")).not.toBeInTheDocument();
     expect(screen.queryByText("采集来源")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "继续下拉，加载更多动态" })).toBeInTheDocument();
   });
 });

@@ -3,11 +3,17 @@ import { useEffect, useState } from "react";
 import { loadFeedSnapshot } from "../data/feedRepository";
 import { normalizeItems } from "../lib/feed";
 
-export function useApiFeedItems() {
+export function useApiFeedItems({ enabled = true } = {}) {
   const [items, setItems] = useState([]);
   const [loadError, setLoadError] = useState("");
 
   useEffect(() => {
+    if (!enabled) {
+      setItems([]);
+      setLoadError("");
+      return;
+    }
+
     let ignore = false;
 
     async function loadItems() {
@@ -47,7 +53,7 @@ export function useApiFeedItems() {
     return () => {
       ignore = true;
     };
-  }, []);
+  }, [enabled]);
 
   return { items, loadError };
 }

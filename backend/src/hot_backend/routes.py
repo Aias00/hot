@@ -8,8 +8,12 @@ router = APIRouter()
 
 
 @router.get("/api/feed")
-def get_feed() -> dict:
-    return {"source": "sqlite", "items": get_store().get_feed_items()}
+def get_feed(
+    q: str = Query(default=""),
+    page: int | None = Query(default=None, ge=1),
+    limit: int | None = Query(default=None, ge=1, le=200),
+) -> dict:
+    return get_store().get_feed_items(query=q, page=page, limit=limit)
 
 
 @router.get("/api/collected")

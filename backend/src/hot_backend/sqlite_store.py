@@ -744,7 +744,13 @@ class HotSQLiteStore:
         self._prune_removed_default_sources(connection)
         self._prune_orphaned_collector_data(connection)
 
-    def get_feed_items(self) -> list[dict[str, Any]]:
+    def get_feed_items(
+        self,
+        *,
+        query: str = "",
+        page: int | None = None,
+        limit: int | None = None,
+    ) -> dict[str, Any]:
         with self.connect() as connection:
             seed_rows = connection.execute(
                 """
@@ -827,7 +833,50 @@ class HotSQLiteStore:
                 }
             )
 
-        return collected_items + items
+        merged_items = collected_items + items
+        normalized_query = query.strip().lower()
+        if normalized_query:
+            merged_items = [
+                item
+                for item in merged_items
+                if normalized_query
+                in " ".join(
+                    [
+                        item.get("source", ""),
+                        item.get("sourceTitle", ""),
+                        item.get("title", ""),
+                        item.get("body", ""),
+                        item.get("quoted", ""),
+                        item.get("reason", ""),
+                        " ".join(item.get("tags", [])),
+                    ]
+                ).lower()
+            ]
+
+        total_count = len(merged_items)
+        if page is None or limit is None:
+            return {
+                "source": "sqlite",
+                "count": total_count,
+                "total_count": total_count,
+                "page": 1,
+                "page_size": total_count,
+                "has_next": False,
+                "items": merged_items,
+            }
+
+        current_page = max(1, page)
+        offset = (current_page - 1) * limit
+        paged_items = merged_items[offset:offset + limit]
+        return {
+            "source": "sqlite",
+            "count": len(paged_items),
+            "total_count": total_count,
+            "page": current_page,
+            "page_size": limit,
+            "has_next": offset + len(paged_items) < total_count,
+            "items": paged_items,
+        }
 
     def get_collected_items(
         self,

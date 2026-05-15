@@ -4,10 +4,10 @@
   align-self: start;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 12px;
+  align-items: flex-start;
+  gap: 16px;
   height: 100vh;
-  padding: 16px 10px 12px;
+  padding: 22px 18px 14px;
   overflow-y: auto;
   overscroll-behavior: contain;
   background: var(--sidebar-gradient);
@@ -23,48 +23,51 @@
 
 .side-nav {
   display: grid;
-  gap: 6px;
+  gap: 10px;
   align-content: start;
   grid-auto-rows: max-content;
-  width: 100%;
-  padding: 0 4px;
-  justify-items: center;
+  width: auto;
+  padding: 2px 0 0;
+  justify-items: start;
 }
 
 .side-link,
 .sidebar-login {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   width: fit-content;
-  min-height: 36px;
-  padding: 7px 10px;
+  min-height: 42px;
+  padding: 10px 16px;
   border: 1px solid transparent;
-  border-radius: 16px;
+  border-radius: 18px;
   color: var(--text-soft-medium);
-  font-size: 0.86rem;
+  font-size: 0.96rem;
   font-weight: 600;
+  letter-spacing: -0.02em;
 }
 
 .side-link:hover,
 .sidebar-login:hover {
   color: var(--text-0);
-  background: var(--surface-0);
-  border-color: var(--border);
+  background: rgba(var(--theme-accent-rgb), 0.04);
+  border-color: rgba(var(--theme-accent-rgb), 0.1);
 }
 
 .side-link-active {
   color: var(--theme-accent);
-  border-color: rgba(var(--theme-accent-rgb), 0.32);
-  background: rgba(var(--theme-accent-rgb), 0.08);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  border-color: rgba(var(--theme-accent-rgb), 0.26);
+  background: rgba(var(--theme-accent-rgb), 0.06);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    0 8px 20px rgba(var(--theme-accent-rgb), 0.06);
 }
 
 .side-icon {
   display: inline-flex;
-  width: 14px;
+  width: 12px;
   justify-content: center;
-  font-size: 12px;
+  font-size: 11px;
   opacity: 0.88;
 }
 
@@ -83,22 +86,22 @@
 .theme-toggle {
   display: inline-grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 4px;
-  padding: 3px;
+  gap: 2px;
+  padding: 2px;
   width: fit-content;
   border-radius: 999px;
   border: 1px solid var(--border);
-  background: var(--surface-card);
+  background: rgba(var(--theme-accent-rgb), 0.02);
   box-shadow: var(--shadow-soft);
 }
 
 .theme-toggle-top {
-  margin: 0 0 8px;
+  margin: 0 0 6px;
 }
 
 .theme-toggle-opt {
-  width: 32px;
-  min-height: 32px;
+  width: 42px;
+  min-height: 38px;
   padding: 0;
   border: 1px solid transparent;
   border-radius: 999px;
@@ -109,6 +112,57 @@
 
 .theme-toggle-opt.is-active {
   color: var(--text-0);
-  border-color: rgba(var(--theme-accent-rgb), 0.24);
-  background: rgba(var(--theme-accent-rgb), 0.12);
+  border-color: rgba(var(--theme-accent-rgb), 0.18);
+  background: rgba(var(--theme-accent-rgb), 0.08);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18);
+}
+
+.sidebar-wechat {
+  display: grid;
+  width: 132px;
+  min-height: 132px;
+  margin-top: 8px;
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.42);
+  box-shadow: var(--shadow-soft);
+  overflow: hidden;
+}
+
+html[data-theme="dark"] .sidebar-wechat {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.sidebar-wechat-image {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.sidebar-wechat-fallback {
+  display: grid;
+  place-items: center;
+  gap: 4px;
+  min-height: 132px;
+  padding: 12px;
+  color: var(--text-1);
+  text-align: center;
+}
+
+.sidebar-wechat-kicker {
+  color: var(--theme-accent);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.sidebar-wechat-fallback strong {
+  font-size: 1rem;
+  line-height: 1.1;
+}
+
+.sidebar-wechat-fallback small {
+  color: var(--text-2);
+  font-size: 0.68rem;
 }

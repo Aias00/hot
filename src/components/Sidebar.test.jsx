@@ -15,16 +15,21 @@ describe("Sidebar", () => {
     expect(screen.getByRole("link", { name: /全部 ai 动态/i })).toHaveClass(
       "side-link-active",
     );
-    expect(screen.getByRole("link", { name: /反馈/i })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /导航中心/i })).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /反馈/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: /精选/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: /采集管理/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: /采集归档/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: /关于/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: /登录/i })).not.toBeInTheDocument();
+    expect(screen.getByAltText("微信公众号二维码")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "浅色" })).toHaveAttribute(
       "aria-checked",
       "true",
     );
     expect(screen.queryByRole("button", { name: "跟随系统" })).not.toBeInTheDocument();
+    const navLinks = screen.getAllByRole("link");
+    expect(navLinks[0]).toHaveAccessibleName(/导航中心/i);
+    expect(navLinks[1]).toHaveAccessibleName(/全部 ai 动态/i);
   });
 });
