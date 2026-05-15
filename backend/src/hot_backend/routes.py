@@ -8,12 +8,18 @@ from hot_backend.sqlite_store import get_store
 router = APIRouter()
 
 
+class LinkItem(BaseModel):
+    label: str
+    url: str
+
+
 class AboutConfigUpdate(BaseModel):
     title: str = ""
     description: str = ""
     qr_code_url: str = ""
     follow_link: str = ""
     contact_info: str = ""
+    links: list[LinkItem] = []
 
 
 @router.get("/api/navigation")
@@ -107,4 +113,5 @@ def update_about(config: AboutConfigUpdate) -> dict:
         qr_code_url=config.qr_code_url,
         follow_link=config.follow_link,
         contact_info=config.contact_info,
+        links=[link.model_dump() for link in config.links],
     )

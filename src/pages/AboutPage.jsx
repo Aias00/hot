@@ -54,6 +54,22 @@ export default function AboutPage() {
           <p className="about-description">{config.description}</p>
         )}
 
+        {config.links && config.links.length > 0 && (
+          <div className="about-links">
+            {config.links.map((link, index) => (
+              <a
+                key={index}
+                className="about-link"
+                href={link.url}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {link.label}
+              </a>
+            ))}
+          </div>
+        )}
+
         {config.follow_link && (
           <a
             className="btn btn-primary about-follow-btn"

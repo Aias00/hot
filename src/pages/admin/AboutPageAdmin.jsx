@@ -8,6 +8,7 @@ export default function AboutPageAdmin() {
     qr_code_url: "",
     follow_link: "",
     contact_info: "",
+    links: [],
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -22,7 +23,14 @@ export default function AboutPageAdmin() {
       const res = await fetch("/api/about");
       if (res.ok) {
         const data = await res.json();
-        setConfig(data);
+        setConfig({
+          title: data.title || "",
+          description: data.description || "",
+          qr_code_url: data.qr_code_url || "",
+          follow_link: data.follow_link || "",
+          contact_info: data.contact_info || "",
+          links: data.links || [],
+        });
       }
     } catch (error) {
       console.error("Failed to fetch about config:", error);
@@ -33,6 +41,28 @@ export default function AboutPageAdmin() {
 
   const handleChange = (field) => (event) => {
     setConfig((prev) => ({ ...prev, [field]: event.target.value }));
+  };
+
+  const handleLinkChange = (index, field) => (event) => {
+    setConfig((prev) => {
+      const links = [...prev.links];
+      links[index] = { ...links[index], [field]: event.target.value };
+      return { ...prev, links };
+    });
+  };
+
+  const handleAddLink = () => {
+    setConfig((prev) => ({
+      ...prev,
+      links: [...prev.links, { label: "", url: "" }],
+    }));
+  };
+
+  const handleRemoveLink = (index) => {
+    setConfig((prev) => ({
+      ...prev,
+      links: prev.links.filter((_, i) => i !== index),
+    }));
   };
 
   const handleSave = async () => {
@@ -109,6 +139,44 @@ export default function AboutPageAdmin() {
             onChange={handleChange("qr_code_url")}
             placeholder="/wechat-qr.png"
           />
+        </div>
+
+        <div className="admin-form__field">
+          <label>外部链接</label>
+          <div className="admin-form__links">
+            {config.links.map((link, index) => (
+              <div key={index} className="admin-form__link-row">
+                <input
+                  type="text"
+                  value={link.label}
+                  onChange={handleLinkChange(index, "label")}
+                  placeholder="链接名称"
+                  className="admin-form__link-label"
+                />
+                <input
+                  type="text"
+                  value={link.url}
+                  onChange={handleLinkChange(index, "url")}
+                  placeholder="https://..."
+                  className="admin-form__link-url"
+                />
+                <button
+                  type="button"
+                  className="admin-form__link-remove"
+                  onClick={() => handleRemoveLink(index)}
+                >
+                  删除
+                </button>
+              </div>
+            ))}
+            <button
+              type="button"
+              className="admin-form__link-add"
+              onClick={handleAddLink}
+            >
+              + 添加链接
+            </button>
+          </div>
         </div>
 
         <div className="admin-form__field">

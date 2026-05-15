@@ -65,6 +65,34 @@ html[data-theme="dark"] .about-bg {
   line-height: 1.7;
 }
 
+.about-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.about-link {
+  display: inline-flex;
+  align-items: center;
+  padding: 10px 20px;
+  border-radius: 999px;
+  background: var(--surface-1);
+  border: 2px solid var(--border);
+  color: var(--text-0);
+  font-size: 0.9375rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: var(--theme-transition);
+}
+
+.about-link:hover {
+  background: var(--surface-2);
+  border-color: var(--theme-accent);
+  color: var(--theme-accent);
+}
+
 .about-follow-btn {
   margin-bottom: 20px;
 }

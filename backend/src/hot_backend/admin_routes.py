@@ -440,4 +440,5 @@ def update_about_config(
         qr_code_url=config.get("qr_code_url", ""),
         follow_link=config.get("follow_link", ""),
         contact_info=config.get("contact_info", ""),
+        links=config.get("links", []),
     )
