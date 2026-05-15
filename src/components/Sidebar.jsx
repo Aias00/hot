@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { NavLink } from "react-router-dom";
 
-import { useNavigation } from "../hooks/useNavigation";
+import { useNavigation } from "../hooks/useNavigation.jsx";
 import { themeOptions } from "../data/themeOptions";
 
 export default function Sidebar({ themePreference, onThemeChange }) {

@@ -1,7 +1,7 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 
 import AppLayout from "../components/AppLayout";
-import { AuthProvider } from "../hooks/useAuth";
+import { AuthProvider } from "../hooks/useAuth.jsx";
 import { feedPageDefinitions, infoPageDefinitions } from "../data/pages";
 import AdminLayout from "../pages/admin/AdminLayout";
 import AdminLogin from "../pages/admin/AdminLogin";

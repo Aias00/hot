@@ -1,6 +1,6 @@
 import { Navigate, NavLink, Outlet, useLocation } from "react-router-dom";
 
-import { useAuth } from "../../hooks/useAuth";
+import { useAuth } from "../../hooks/useAuth.jsx";
 
 export default function AdminLayout() {
   const { isAuthenticated, logout } = useAuth();
