@@ -374,3 +374,40 @@ def reorder_nav_hub_links(
     store = get_store()
     store.reorder_nav_hub_links(category_id, links)
     return {"reordered": True}
+
+
+# ==================== Collector Schedule ====================
+
+
+@router.get("/schedule")
+def get_schedule(
+    _: TokenPayload = Depends(get_current_admin),
+) -> dict:
+    """Get collector schedule configuration."""
+    from hot_backend.sqlite_store import get_store
+
+    return get_store().get_collector_schedule()
+
+
+@router.put("/schedule")
+def update_schedule(
+    config: dict,
+    _: TokenPayload = Depends(get_current_admin),
+) -> dict:
+    """Update collector schedule configuration."""
+    from hot_backend.scheduler import update_scheduler
+
+    return update_scheduler(
+        enabled=config.get("enabled"),
+        interval_minutes=config.get("interval_minutes"),
+    )
+
+
+@router.post("/schedule/run")
+async def run_collection_now(
+    _: TokenPayload = Depends(get_current_admin),
+) -> dict:
+    """Run collection immediately for all enabled RSS sources."""
+    from hot_backend.scheduler import run_collection
+
+    return await run_collection()

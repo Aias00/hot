@@ -7,6 +7,7 @@ import AdminLayout from "../pages/admin/AdminLayout";
 import AdminLogin from "../pages/admin/AdminLogin";
 import AdminOverview from "../pages/admin/AdminOverview";
 import NavHubAdminPage from "../pages/admin/NavHubPage";
+import SchedulePage from "../pages/admin/SchedulePage";
 import CollectedHotPage from "../pages/CollectedHotPage";
 import CollectorSourcesPage from "../pages/CollectorSourcesPage";
 import DailyPage from "../pages/DailyPage";
@@ -32,6 +33,7 @@ export default function AppRouter({
             <Route path="sources" element={<SourcesPage />} />
             <Route path="navigation" element={<NavigationPage />} />
             <Route path="nav-hub" element={<NavHubAdminPage />} />
+            <Route path="schedule" element={<SchedulePage />} />
           </Route>
 
           {/* Main app routes */}

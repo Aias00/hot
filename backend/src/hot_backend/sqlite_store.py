@@ -289,6 +289,17 @@ class HotSQLiteStore:
               updated_at TEXT NOT NULL,
               FOREIGN KEY (category_id) REFERENCES nav_hub_categories(id)
             );
+
+            CREATE TABLE IF NOT EXISTS collector_schedule (
+              id INTEGER PRIMARY KEY CHECK (id = 1),
+              enabled INTEGER NOT NULL DEFAULT 0,
+              interval_minutes INTEGER NOT NULL DEFAULT 60,
+              last_run_at TEXT,
+              next_run_at TEXT,
+              last_run_status TEXT,
+              created_at TEXT NOT NULL,
+              updated_at TEXT NOT NULL
+            );
             """
         )
 
@@ -2408,6 +2419,74 @@ class HotSQLiteStore:
                     "UPDATE nav_hub_links SET sort_order = ?, updated_at = ? WHERE id = ? AND category_id = ?",
                     (item["sort_order"], now, item["id"], category_id),
                 )
+
+    # ==================== Collector Schedule ====================
+
+    def get_collector_schedule(self) -> dict:
+        """Get collector schedule config."""
+        with self.connect() as conn:
+            row = conn.execute(
+                "SELECT enabled, interval_minutes, last_run_at, next_run_at, last_run_status, created_at, updated_at FROM collector_schedule WHERE id = 1"
+            ).fetchone()
+            if not row:
+                # Create default config
+                now = datetime.now(timezone.utc).isoformat()
+                conn.execute(
+                    "INSERT INTO collector_schedule (id, enabled, interval_minutes, created_at, updated_at) VALUES (1, 0, 60, ?, ?)",
+                    (now, now),
+                )
+                return {
+                    "enabled": False,
+                    "interval_minutes": 60,
+                    "last_run_at": None,
+                    "next_run_at": None,
+                    "last_run_status": None,
+                }
+            return {
+                "enabled": bool(row[0]),
+                "interval_minutes": row[1],
+                "last_run_at": row[2],
+                "next_run_at": row[3],
+                "last_run_status": row[4],
+            }
+
+    def update_collector_schedule(self, updates: dict) -> dict:
+        """Update collector schedule config."""
+        now = datetime.now(timezone.utc).isoformat()
+        with self.connect() as conn:
+            # Ensure row exists
+            existing = conn.execute("SELECT id FROM collector_schedule WHERE id = 1").fetchone()
+            if not existing:
+                conn.execute(
+                    "INSERT INTO collector_schedule (id, enabled, interval_minutes, created_at, updated_at) VALUES (1, 0, 60, ?, ?)",
+                    (now, now),
+                )
+
+            fields = []
+            values = []
+            if "enabled" in updates:
+                fields.append("enabled = ?")
+                values.append(1 if updates["enabled"] else 0)
+            if "interval_minutes" in updates:
+                fields.append("interval_minutes = ?")
+                values.append(updates["interval_minutes"])
+            if "last_run_at" in updates:
+                fields.append("last_run_at = ?")
+                values.append(updates["last_run_at"])
+            if "next_run_at" in updates:
+                fields.append("next_run_at = ?")
+                values.append(updates["next_run_at"])
+            if "last_run_status" in updates:
+                fields.append("last_run_status = ?")
+                values.append(updates["last_run_status"])
+
+            if fields:
+                fields.append("updated_at = ?")
+                values.append(now)
+                values.append(1)
+                conn.execute(f"UPDATE collector_schedule SET {', '.join(fields)} WHERE id = 1", values)
+
+        return self.get_collector_schedule()
 
 
 @lru_cache(maxsize=1)
