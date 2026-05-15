@@ -8,6 +8,8 @@ import AdminLogin from "../pages/admin/AdminLogin";
 import AdminOverview from "../pages/admin/AdminOverview";
 import NavHubAdminPage from "../pages/admin/NavHubPage";
 import SchedulePage from "../pages/admin/SchedulePage";
+import AboutPageAdmin from "../pages/admin/AboutPageAdmin";
+import AboutPage from "../pages/AboutPage";
 import CollectedHotPage from "../pages/CollectedHotPage";
 import CollectorSourcesPage from "../pages/CollectorSourcesPage";
 import DailyPage from "../pages/DailyPage";
@@ -34,6 +36,7 @@ export default function AppRouter({
             <Route path="navigation" element={<NavigationPage />} />
             <Route path="nav-hub" element={<NavHubAdminPage />} />
             <Route path="schedule" element={<SchedulePage />} />
+            <Route path="about" element={<AboutPageAdmin />} />
           </Route>
 
           {/* Main app routes */}
@@ -59,6 +62,7 @@ export default function AppRouter({
             <Route path="/collect" element={<CollectorSourcesPage />} />
             <Route path="/collected" element={<CollectedHotPage />} />
             <Route path="/nav-hub" element={<NavHubPage />} />
+            <Route path="/about" element={<AboutPage />} />
             {infoPageDefinitions.map((page) => (
               <Route
                 key={page.path}

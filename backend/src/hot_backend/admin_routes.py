@@ -411,3 +411,33 @@ async def run_collection_now(
     from hot_backend.scheduler import run_collection
 
     return await run_collection()
+
+
+# ==================== About Page ====================
+
+
+@router.get("/about")
+def get_about_config_admin(
+    _: TokenPayload = Depends(get_current_admin),
+) -> dict:
+    """Get about page configuration."""
+    from hot_backend.sqlite_store import get_store
+
+    return get_store().get_about_config()
+
+
+@router.put("/about")
+def update_about_config(
+    config: dict,
+    _: TokenPayload = Depends(get_current_admin),
+) -> dict:
+    """Update about page configuration."""
+    from hot_backend.sqlite_store import get_store
+
+    return get_store().update_about_config(
+        title=config.get("title", ""),
+        description=config.get("description", ""),
+        qr_code_url=config.get("qr_code_url", ""),
+        follow_link=config.get("follow_link", ""),
+        contact_info=config.get("contact_info", ""),
+    )

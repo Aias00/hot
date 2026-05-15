@@ -300,6 +300,16 @@ class HotSQLiteStore:
               created_at TEXT NOT NULL,
               updated_at TEXT NOT NULL
             );
+
+            CREATE TABLE IF NOT EXISTS about_config (
+              id INTEGER PRIMARY KEY CHECK (id = 1),
+              title TEXT NOT NULL DEFAULT '',
+              description TEXT NOT NULL DEFAULT '',
+              qr_code_url TEXT NOT NULL DEFAULT '',
+              follow_link TEXT NOT NULL DEFAULT '',
+              contact_info TEXT NOT NULL DEFAULT '',
+              updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+            );
             """
         )
 
@@ -2486,6 +2496,61 @@ class HotSQLiteStore:
                 conn.execute(f"UPDATE collector_schedule SET {', '.join(fields)} WHERE id = 1", values)
 
         return self.get_collector_schedule()
+
+    # ==================== About Page Config ====================
+
+    def get_about_config(self) -> dict[str, str]:
+        """Get about page configuration."""
+        with self.connect() as connection:
+            row = connection.execute(
+                "SELECT title, description, qr_code_url, follow_link, contact_info FROM about_config WHERE id = 1"
+            ).fetchone()
+
+        if row is None:
+            return {
+                "title": "",
+                "description": "",
+                "qr_code_url": "",
+                "follow_link": "",
+                "contact_info": "",
+            }
+
+        return {
+            "title": row["title"],
+            "description": row["description"],
+            "qr_code_url": row["qr_code_url"],
+            "follow_link": row["follow_link"],
+            "contact_info": row["contact_info"],
+        }
+
+    def update_about_config(
+        self,
+        *,
+        title: str = "",
+        description: str = "",
+        qr_code_url: str = "",
+        follow_link: str = "",
+        contact_info: str = "",
+    ) -> dict[str, str]:
+        """Update about page configuration."""
+        now = datetime.now(timezone.utc).isoformat()
+        with self.connect() as connection:
+            connection.execute(
+                """
+                INSERT INTO about_config (id, title, description, qr_code_url, follow_link, contact_info, updated_at)
+                VALUES (1, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT(id) DO UPDATE SET
+                    title = excluded.title,
+                    description = excluded.description,
+                    qr_code_url = excluded.qr_code_url,
+                    follow_link = excluded.follow_link,
+                    contact_info = excluded.contact_info,
+                    updated_at = excluded.updated_at
+                """,
+                (title, description, qr_code_url, follow_link, contact_info, now),
+            )
+
+        return self.get_about_config()
 
 
 @lru_cache(maxsize=1)

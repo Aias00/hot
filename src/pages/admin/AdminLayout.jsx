@@ -16,6 +16,7 @@ export default function AdminLayout() {
     { to: "/admin/schedule", label: "定时采集" },
     { to: "/admin/navigation", label: "侧边导航" },
     { to: "/admin/nav-hub", label: "导航中心" },
+    { to: "/admin/about", label: "关于页面" },
   ];
 
   return (
