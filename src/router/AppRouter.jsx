@@ -2,6 +2,8 @@ import { BrowserRouter, Route, Routes } from "react-router-dom";
 
 import AppLayout from "../components/AppLayout";
 import { feedPageDefinitions, infoPageDefinitions } from "../data/pages";
+import AboutPage from "../pages/AboutPage";
+import AdminPage from "../pages/AdminPage";
 import CollectedHotPage from "../pages/CollectedHotPage";
 import CollectorSourcesPage from "../pages/CollectorSourcesPage";
 import DailyPage from "../pages/DailyPage";
@@ -39,6 +41,8 @@ export default function AppRouter({
           <Route path="/collect" element={<CollectorSourcesPage />} />
           <Route path="/collected" element={<CollectedHotPage />} />
           <Route path="/nav-hub" element={<NavHubPage />} />
+          <Route path="/about" element={<AboutPage />} />
+          <Route path="/admin" element={<AdminPage />} />
           {infoPageDefinitions.map((page) => (
             <Route
               key={page.path}

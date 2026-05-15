@@ -1,10 +1,19 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, Query
+from pydantic import BaseModel
 
 from hot_backend.sqlite_store import get_store
 
 router = APIRouter()
+
+
+class AboutConfigUpdate(BaseModel):
+    title: str = ""
+    description: str = ""
+    qr_code_url: str = ""
+    follow_link: str = ""
+    contact_info: str = ""
 
 
 @router.get("/api/feed")
@@ -59,3 +68,19 @@ def get_mp(
     page: int = Query(default=1, ge=1),
 ) -> dict:
     return get_store().get_mp_snapshot(query=q, since=since, page=page)
+
+
+@router.get("/api/about")
+def get_about() -> dict:
+    return get_store().get_about_config()
+
+
+@router.put("/api/admin/about")
+def update_about(config: AboutConfigUpdate) -> dict:
+    return get_store().update_about_config(
+        title=config.title,
+        description=config.description,
+        qr_code_url=config.qr_code_url,
+        follow_link=config.follow_link,
+        contact_info=config.contact_info,
+    )
