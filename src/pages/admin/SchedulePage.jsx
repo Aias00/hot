@@ -193,6 +193,11 @@ export default function SchedulePage() {
                 <div className="schedule-result__error">{lastRunResult.error}</div>
               ) : (
                 <>
+                  {lastRunResult.run_at && (
+                    <div className="schedule-result__time">
+                      采集时间：{new Date(lastRunResult.run_at).toLocaleString("zh-CN")}
+                    </div>
+                  )}
                   <div className="schedule-result__summary">
                     共采集 {lastRunResult.sources_count || 0} 个源
                   </div>

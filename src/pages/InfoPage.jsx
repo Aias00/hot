@@ -54,6 +54,20 @@ export default function InfoPage({ page }) {
           </article>
         ))}
       </section>
+
+      {page.wechatQR && (
+        <section className="about-wechat">
+          <div className="about-wechat__card">
+            <h3 className="about-wechat__title">微信公众号</h3>
+            <p className="about-wechat__desc">关注获取更多 AI 资讯</p>
+            <img
+              className="about-wechat__qr"
+              src="/wechat-qr.png"
+              alt="微信公众号二维码"
+            />
+          </div>
+        </section>
+      )}
     </>
   );
 }

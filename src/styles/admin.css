@@ -575,7 +575,45 @@
   color: var(--color-text-secondary);
 }
 
+.schedule-result__time {
+  margin-bottom: 12px;
+  font-size: 13px;
+  color: var(--color-text);
+}
+
 .schedule-result__error {
   color: var(--color-error);
   font-size: 14px;
+}
+
+/* About WeChat Section */
+.about-wechat {
+  max-width: 600px;
+  margin: 32px auto;
+}
+
+.about-wechat__card {
+  background: var(--color-surface);
+  border-radius: 12px;
+  padding: 32px;
+  text-align: center;
+}
+
+.about-wechat__title {
+  margin: 0 0 8px;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.about-wechat__desc {
+  margin: 0 0 24px;
+  font-size: 14px;
+  color: var(--color-text-secondary);
+}
+
+.about-wechat__qr {
+  width: 200px;
+  height: 200px;
+  border-radius: 8px;
 }

@@ -23,31 +23,25 @@ export const infoPageDefinitions = [
   {
     path: "/about",
     title: "关于",
-    subtitle: "这个 fork 保留了 AIHOT 的终端式信息设计和浏览节奏",
+    subtitle: "AI 热点聚合平台",
     metaSecondary: "React 结构化版本",
     sections: [
       {
-        kicker: "Design",
-        title: "保留原站的视觉节奏",
+        kicker: "About",
+        title: "AIHOT",
         copy:
-          "左侧导航、深色卡片、时间轴和推荐理由区都尽量贴近原站；当前版本更重视可维护的前端结构，而不是 1:1 产品复刻。",
-        tags: ["React", "Vite", "Timeline UI"],
+          "聚合 AI 动态、导航入口与采集归档的本地优先信息站点。左侧导航、深色卡片、时间轴和推荐理由区，帮助你快速了解 AI 领域最新动态。",
+        tags: ["React", "Vite", "Python", "FastAPI"],
       },
       {
-        kicker: "Data",
-        title: "当前仍是静态快照数据",
+        kicker: "Feature",
+        title: "核心功能",
         copy:
-          "首页和各个子页都从同一份静态 feed 快照派生，适合先验证信息架构、视觉和交互；后续可以无缝换成真实 API。",
-        tags: ["JSON", "Mock Data", "Future API"],
-      },
-      {
-        kicker: "Scope",
-        title: "为继续工程化预留了空间",
-        copy:
-          "现在已经拆分出 components、hooks、data、lib，后续继续加 router loader、真实数据源、测试基建和样式模块会顺手很多。",
-        tags: ["components", "hooks", "data", "lib"],
+          "精选 AI 高价值内容、每日 AI 日报、公众号爆文聚合、RSS 自动采集、导航中心。支持深色主题、响应式布局。",
+        tags: ["Timeline UI", "Dark Theme", "RSS"],
       },
     ],
+    wechatQR: true,
   },
   {
     path: "/feedback",
