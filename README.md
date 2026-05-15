@@ -96,6 +96,65 @@ backend/
 - `/mp`: 公众号爆文
 - `/about`: 关于
 - `/feedback`: 反馈
+- `/admin`: 管理后台（需登录）
+
+## Admin Panel
+
+管理后台用于管理采集源和导航链接。
+
+### 配置
+
+启动前需要设置管理员密码：
+
+```bash
+export ADMIN_PASSWORD="your-secure-password"
+```
+
+可选：设置 JWT 密钥（不设置时会根据 ADMIN_PASSWORD 自动生成）：
+
+```bash
+export JWT_SECRET="your-jwt-secret"
+```
+
+### 访问
+
+1. 访问 `http://127.0.0.1:5173/admin`
+2. 输入管理员密码登录
+3. Token 有效期 24 小时
+
+### 功能
+
+- **采集源管理**：添加、编辑、删除、启用/禁用 RSS 采集源
+- **导航管理**：添加、编辑、删除、排序导航链接
+
+### Admin APIs
+
+认证相关：
+
+- `POST /api/admin/auth/login` - 登录获取 JWT token
+- `GET /api/admin/auth/verify` - 验证 token 有效性
+
+采集源管理：
+
+- `GET /api/admin/sources` - 列表
+- `POST /api/admin/sources` - 新增
+- `GET /api/admin/sources/:id` - 详情
+- `PUT /api/admin/sources/:id` - 更新
+- `DELETE /api/admin/sources/:id` - 删除
+- `PATCH /api/admin/sources/:id/toggle` - 启用/禁用
+
+导航管理：
+
+- `GET /api/admin/navigation` - 列表
+- `POST /api/admin/navigation` - 新增
+- `PUT /api/admin/navigation/:id` - 更新
+- `DELETE /api/admin/navigation/:id` - 删除
+- `PATCH /api/admin/navigation/:id/toggle` - 启用/禁用
+- `PUT /api/admin/navigation/reorder` - 重排序
+
+公开 API：
+
+- `GET /api/navigation` - 获取导航配置（前端渲染用）
 
 ## Backend APIs
 
