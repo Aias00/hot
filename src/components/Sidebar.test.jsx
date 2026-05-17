@@ -9,6 +9,7 @@ vi.mock("../hooks/useNavigation.jsx", () => ({
     navItems: [
       { icon: "◫", label: "导航中心", to: "/nav-hub" },
       { icon: "☰", label: "全部 AI 动态", to: "/all" },
+      { icon: "◉", label: "关于", to: "/about" },
     ],
     loading: false,
   }),
@@ -26,11 +27,11 @@ describe("Sidebar", () => {
       "side-link-active",
     );
     expect(screen.getByRole("link", { name: /导航中心/i })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /关于/i })).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: /反馈/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: /精选/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: /采集管理/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: /采集归档/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: /关于/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: /登录/i })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "浅色" })).toHaveAttribute(
       "aria-checked",
@@ -40,5 +41,6 @@ describe("Sidebar", () => {
     const navLinks = screen.getAllByRole("link");
     expect(navLinks[0]).toHaveAccessibleName(/导航中心/i);
     expect(navLinks[1]).toHaveAccessibleName(/全部 ai 动态/i);
+    expect(navLinks[2]).toHaveAccessibleName(/关于/i);
   });
 });

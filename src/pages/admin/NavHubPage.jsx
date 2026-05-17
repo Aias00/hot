@@ -303,7 +303,11 @@ export default function NavHubPage() {
       )}
 
       <div className="nav-hub-admin">
-        {categories.map((category) => (
+        {categories.length === 0 ? (
+          <div className="nav-hub-admin__empty">
+            暂无导航分类。你可以先新增分类，或等待默认导航种子初始化完成。
+          </div>
+        ) : categories.map((category) => (
           <div key={category.id} className="nav-hub-admin__category">
             <div
               className="nav-hub-admin__category-header"

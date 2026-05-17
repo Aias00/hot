@@ -18,6 +18,8 @@ FEED_SEED_PATH = REPO_ROOT / "public" / "feed-snapshot.json"
 DAILY_SEED_PATH = REPO_ROOT / "backend" / "data" / "seed" / "daily_snapshot.json"
 MP_SEED_PATH = REPO_ROOT / "backend" / "data" / "seed" / "mp_snapshot.json"
 RSS_GENERIC_SAMPLE_PATH = REPO_ROOT / "backend" / "data" / "seed" / "rss_generic_sample.xml"
+NAV_HUB_SEED_PATH = REPO_ROOT / "backend" / "data" / "seed" / "nav_hub_seed.json"
+DEFAULT_WECHAT_QR_PUBLIC_PATH = REPO_ROOT / "public" / "wechat-qr.png"
 DEFAULT_RSS_SOURCE_IDS = (
     "openai-news-rss",
     "github-blog-rss",
@@ -115,10 +117,12 @@ class HotSQLiteStore:
     def initialize(self) -> None:
         with self.connect() as connection:
             self._create_tables(connection)
+            self._ensure_runtime_schema(connection)
             self._ensure_seeded(connection)
             self._ensure_collector_sources(connection)
         # Seed navigation items (outside the connection context to use its own transaction)
         self.seed_navigation_items()
+        self.seed_nav_hub_categories()
 
     def _create_tables(self, connection: sqlite3.Connection) -> None:
         connection.executescript(
@@ -308,10 +312,21 @@ class HotSQLiteStore:
               qr_code_url TEXT NOT NULL DEFAULT '',
               follow_link TEXT NOT NULL DEFAULT '',
               contact_info TEXT NOT NULL DEFAULT '',
+              links_json TEXT NOT NULL DEFAULT '[]',
               updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
             );
             """
         )
+
+    def _ensure_runtime_schema(self, connection: sqlite3.Connection) -> None:
+        about_columns = {
+            row["name"]
+            for row in connection.execute("PRAGMA table_info(about_config)").fetchall()
+        }
+        if "links_json" not in about_columns:
+            connection.execute(
+                "ALTER TABLE about_config ADD COLUMN links_json TEXT NOT NULL DEFAULT '[]'"
+            )
 
     def _ensure_seeded(self, connection: sqlite3.Connection) -> None:
         version = connection.execute(
@@ -2215,22 +2230,80 @@ class HotSQLiteStore:
             conn.execute("DELETE FROM navigation_items WHERE id = ?", (item_id,))
 
     def seed_navigation_items(self) -> None:
-        """Seed default navigation items if table is empty."""
+        """Seed default navigation items and backfill missing defaults."""
         now = datetime.now(timezone.utc).isoformat()
         default_items = [
             {"icon": "◫", "label": "导航中心", "to": "/nav-hub", "sort_order": 0},
             {"icon": "☰", "label": "全部 AI 动态", "to": "/all", "sort_order": 1},
+            {"icon": "◉", "label": "关于", "to": "/about", "sort_order": 2},
         ]
         with self.connect() as conn:
             count = conn.execute("SELECT COUNT(*) FROM navigation_items").fetchone()[0]
-            if count == 0:
-                for item in default_items:
+            max_order = conn.execute("SELECT COALESCE(MAX(sort_order), -1) FROM navigation_items").fetchone()[0]
+            for item in default_items:
+                existing = conn.execute(
+                    'SELECT id FROM navigation_items WHERE "to" = ?',
+                    (item["to"],),
+                ).fetchone()
+                if existing:
+                    continue
+
+                sort_order = item["sort_order"] if count == 0 else max_order + 1
+                conn.execute(
+                    """
+                    INSERT INTO navigation_items (icon, label, "to", sort_order, enabled, created_at, updated_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    (item["icon"], item["label"], item["to"], sort_order, 1, now, now),
+                )
+                count += 1
+                max_order = sort_order
+
+    def seed_nav_hub_categories(self) -> None:
+        """Seed default nav hub categories and links if tables are empty."""
+        seed_categories = _read_json(NAV_HUB_SEED_PATH)
+        now = datetime.now(timezone.utc).isoformat()
+
+        with self.connect() as conn:
+            category_count = conn.execute("SELECT COUNT(*) FROM nav_hub_categories").fetchone()[0]
+            link_count = conn.execute("SELECT COUNT(*) FROM nav_hub_links").fetchone()[0]
+            if category_count > 0 or link_count > 0:
+                return
+
+            for category_index, category in enumerate(seed_categories):
+                conn.execute(
+                    """
+                    INSERT INTO nav_hub_categories (id, name, icon, color, sort_order, enabled, created_at, updated_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        category["id"],
+                        category["name"],
+                        category.get("icon", ""),
+                        category.get("color", "#7dd3fc"),
+                        category_index,
+                        1,
+                        now,
+                        now,
+                    ),
+                )
+
+                for link_index, link in enumerate(category.get("links", [])):
                     conn.execute(
                         """
-                        INSERT INTO navigation_items (icon, label, "to", sort_order, enabled, created_at, updated_at)
-                        VALUES (?, ?, ?, ?, ?, ?, ?)
+                        INSERT INTO nav_hub_links (category_id, title, url, description, sort_order, enabled, created_at, updated_at)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                         """,
-                        (item["icon"], item["label"], item["to"], item["sort_order"], 1, now, now),
+                        (
+                            category["id"],
+                            link["title"],
+                            link["url"],
+                            link.get("description", ""),
+                            link_index,
+                            1,
+                            now,
+                            now,
+                        ),
                     )
 
     # ==================== Nav Hub Categories ====================
@@ -2501,6 +2574,7 @@ class HotSQLiteStore:
 
     def get_about_config(self) -> dict[str, Any]:
         """Get about page configuration."""
+        default_qr_code_url = "/wechat-qr.png" if DEFAULT_WECHAT_QR_PUBLIC_PATH.exists() else ""
         with self.connect() as connection:
             row = connection.execute(
                 "SELECT title, description, qr_code_url, follow_link, contact_info, links_json FROM about_config WHERE id = 1"
@@ -2510,7 +2584,7 @@ class HotSQLiteStore:
             return {
                 "title": "",
                 "description": "",
-                "qr_code_url": "",
+                "qr_code_url": default_qr_code_url,
                 "follow_link": "",
                 "contact_info": "",
                 "links": [],
@@ -2519,7 +2593,7 @@ class HotSQLiteStore:
         return {
             "title": row["title"],
             "description": row["description"],
-            "qr_code_url": row["qr_code_url"],
+            "qr_code_url": row["qr_code_url"] or default_qr_code_url,
             "follow_link": row["follow_link"],
             "contact_info": row["contact_info"],
             "links": json.loads(row["links_json"] or "[]"),

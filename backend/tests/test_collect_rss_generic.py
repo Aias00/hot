@@ -9,7 +9,7 @@ from uuid import uuid4
 from fastapi.testclient import TestClient
 
 from hot_backend.app import create_app
-from hot_backend.sqlite_store import MP_SEED_PATH, RSS_GENERIC_SAMPLE_PATH, get_store
+from hot_backend.sqlite_store import HotSQLiteStore, MP_SEED_PATH, RSS_GENERIC_SAMPLE_PATH, get_store
 
 
 class _FeedHandler(BaseHTTPRequestHandler):
@@ -115,6 +115,13 @@ def _purge_test_source(source_id: str) -> None:
         connection.execute("DELETE FROM collector_sources WHERE source_id = ?", (source_id,))
 
 
+def _clear_nav_hub_seed_tables() -> None:
+    store = get_store()
+    with store.connect() as connection:
+        connection.execute("DELETE FROM nav_hub_links")
+        connection.execute("DELETE FROM nav_hub_categories")
+
+
 def _create_sample_rss_source(client: TestClient, source_id: str) -> None:
     response = client.post(
         "/api/collect/sources",
@@ -129,6 +136,83 @@ def _create_sample_rss_source(client: TestClient, source_id: str) -> None:
         },
     )
     assert response.status_code == 201
+
+
+def test_nav_hub_public_api_is_seeded_when_tables_are_empty() -> None:
+    _clear_nav_hub_seed_tables()
+    get_store().seed_nav_hub_categories()
+
+    client = TestClient(create_app())
+    response = client.get("/api/nav-hub")
+
+    assert response.status_code == 200
+    categories = response.json()
+    assert len(categories) >= 6
+    assert categories[0]["id"] == "dev"
+    assert categories[0]["links"][0]["title"] == "GitHub"
+
+
+def test_store_backfills_about_navigation_and_old_about_schema(tmp_path: Path) -> None:
+    db_path = tmp_path / "legacy.sqlite3"
+    store = HotSQLiteStore(db_path)
+
+    with store.connect() as connection:
+      connection.executescript(
+          """
+          CREATE TABLE meta (
+            key TEXT PRIMARY KEY,
+            value TEXT NOT NULL
+          );
+          CREATE TABLE navigation_items (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            icon TEXT NOT NULL DEFAULT '',
+            label TEXT NOT NULL,
+            "to" TEXT NOT NULL,
+            sort_order INTEGER NOT NULL DEFAULT 0,
+            enabled INTEGER NOT NULL DEFAULT 1,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL
+          );
+          CREATE TABLE about_config (
+            id INTEGER PRIMARY KEY CHECK (id = 1),
+            title TEXT NOT NULL DEFAULT '',
+            description TEXT NOT NULL DEFAULT '',
+            qr_code_url TEXT NOT NULL DEFAULT '',
+            follow_link TEXT NOT NULL DEFAULT '',
+            contact_info TEXT NOT NULL DEFAULT '',
+            updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+          );
+          """
+      )
+      connection.execute("INSERT INTO meta (key, value) VALUES ('schema_version', '1')")
+      connection.execute(
+          """
+          INSERT INTO navigation_items (icon, label, "to", sort_order, enabled, created_at, updated_at)
+          VALUES ('◫', '导航中心', '/nav-hub', 0, 1, '2026-05-17T00:00:00+00:00', '2026-05-17T00:00:00+00:00')
+          """
+      )
+      connection.execute(
+          """
+          INSERT INTO navigation_items (icon, label, "to", sort_order, enabled, created_at, updated_at)
+          VALUES ('☰', '全部 AI 动态', '/all', 1, 1, '2026-05-17T00:00:00+00:00', '2026-05-17T00:00:00+00:00')
+          """
+      )
+      connection.execute(
+          """
+          INSERT INTO about_config (id, title, description, qr_code_url, follow_link, contact_info, updated_at)
+          VALUES (1, '关于', 'desc', '', '', '', '2026-05-17T00:00:00+00:00')
+          """
+      )
+
+    store.initialize()
+
+    nav_items = store.list_navigation_items()
+    assert any(item["to"] == "/about" and item["enabled"] for item in nav_items)
+
+    about_config = store.get_about_config()
+    assert about_config["title"] == "关于"
+    assert isinstance(about_config["links"], list)
+    assert about_config["qr_code_url"] == "/wechat-qr.png"
 
 
 def _create_mp_snapshot_source(client: TestClient, source_id: str) -> None:
