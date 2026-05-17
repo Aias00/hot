@@ -1,6 +1,7 @@
 # Progress
 
 ## Done
+- 已将 `backend/.env` 与 `backend/data/*.sqlite3` 从版本控制中拿掉，并改成可选加载本地 env 文件，避免把管理员密码和本地 SQLite 运行数据一起推到远程。
 - 已修正 admin 登录启动链路：`dev:backend` / `dev-full.mjs` 现在会加载 `backend/.env`，并且联合启动脚本改为使用当前 worktree 作为 `cwd`，避免管理员密码环境变量缺失或误跑到主工作区。
 - 已修正 `/nav-hub` 分类卡片在 CSS Grid 中被同排最高卡片拉伸的问题；不同分类链接数量不一致时，卡片现在按内容高度收口，标题和链接列表不再出现异常大留白。
 - 抓取目标站的布局结构、视觉 token、响应式形态和时间轴条目数据。

@@ -15,7 +15,6 @@ const frontendPort = readFlag("--port", "5173");
 const backendHost = readFlag("--backend-host", "127.0.0.1");
 const backendPort = readFlag("--backend-port", "18000");
 const workspaceRoot = process.cwd();
-const backendEnvFile = "backend/.env";
 
 const children = [];
 
@@ -48,16 +47,8 @@ process.on("SIGTERM", () => {
   process.exit(143);
 });
 
-const backend = startProcess("uv", [
-  "run",
-  "--project",
-  "backend",
-  "uvicorn",
-  "hot_backend.app:app",
-  "--app-dir",
-  "backend/src",
-  "--env-file",
-  backendEnvFile,
+const backend = startProcess(process.execPath, [
+  "scripts/dev-backend.mjs",
   "--host",
   backendHost,
   "--port",

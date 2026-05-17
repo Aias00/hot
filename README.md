@@ -104,10 +104,16 @@ backend/
 
 ### 配置
 
-启动前需要设置管理员密码：
+启动前需要设置管理员密码。两种方式任选其一：
 
 ```bash
 export ADMIN_PASSWORD="your-secure-password"
+```
+
+或创建本地开发用的 `backend/.env`（可从 `backend/.env.example` 复制）：
+
+```bash
+cp backend/.env.example backend/.env
 ```
 
 可选：设置 JWT 密钥（不设置时会根据 ADMIN_PASSWORD 自动生成）：
