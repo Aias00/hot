@@ -14,12 +14,14 @@ const frontendHost = readFlag("--host", "127.0.0.1");
 const frontendPort = readFlag("--port", "5173");
 const backendHost = readFlag("--backend-host", "127.0.0.1");
 const backendPort = readFlag("--backend-port", "18000");
+const workspaceRoot = process.cwd();
+const backendEnvFile = "backend/.env";
 
 const children = [];
 
 function startProcess(command, args, env = {}) {
   const child = spawn(command, args, {
-    cwd: "/Users/aias/Work/github/hot",
+    cwd: workspaceRoot,
     env: { ...process.env, ...env },
     stdio: "inherit",
   });
@@ -54,6 +56,8 @@ const backend = startProcess("uv", [
   "hot_backend.app:app",
   "--app-dir",
   "backend/src",
+  "--env-file",
+  backendEnvFile,
   "--host",
   backendHost,
   "--port",

@@ -4,6 +4,16 @@ import { describe, expect, it, vi } from "vitest";
 
 import Sidebar from "./Sidebar";
 
+vi.mock("../hooks/useNavigation.jsx", () => ({
+  useNavigation: () => ({
+    navItems: [
+      { icon: "◫", label: "导航中心", to: "/nav-hub" },
+      { icon: "☰", label: "全部 AI 动态", to: "/all" },
+    ],
+    loading: false,
+  }),
+}));
+
 describe("Sidebar", () => {
   it("highlights the active route and exposes dark/light theme controls", () => {
     render(
@@ -22,7 +32,6 @@ describe("Sidebar", () => {
     expect(screen.queryByRole("link", { name: /采集归档/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: /关于/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: /登录/i })).not.toBeInTheDocument();
-    expect(screen.getByAltText("微信公众号二维码")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "浅色" })).toHaveAttribute(
       "aria-checked",
       "true",

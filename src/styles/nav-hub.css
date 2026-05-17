@@ -182,6 +182,7 @@ html[data-theme="dark"] .nav-hub-pill {
 .nav-hub-grid-list {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  align-items: start;
   gap: 18px;
 }
 
