@@ -14,6 +14,7 @@ from curl_cffi import requests
 from hot_backend.media_variants import (
     normalize_extension,
     plan_image_variants,
+    prepare_variant_uploads,
     validate_image_upload,
 )
 
@@ -189,14 +190,19 @@ def create_uploaded_media_asset(
         original_ext=validated.extension,
     )
 
-    # Phase 1 locks in the public key contract; optimized rendition generation can
-    # replace these uploads later without changing callers or stored URLs.
+    prepared_uploads = prepare_variant_uploads(
+        original_content=content,
+        original_extension=validated.extension,
+        original_mime_type=validated.mime_type,
+    )
+
     for variant in plan_image_variants(validated.extension):
         storage_key = descriptor[f"storage_key_{variant.name}"]
+        prepared = prepared_uploads[variant.name]
         upload_to_r2(
             storage_key=storage_key,
-            content=content,
-            content_type=validated.mime_type,
+            content=prepared.content,
+            content_type=prepared.content_type,
         )
 
     return store.create_media_asset(

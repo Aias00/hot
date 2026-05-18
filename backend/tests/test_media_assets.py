@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from base64 import b64decode
 from pathlib import Path
+import struct
+import zlib
 
 import pytest
 from fastapi.testclient import TestClient
@@ -9,13 +11,35 @@ from fastapi.testclient import TestClient
 from hot_backend.app import create_app
 from hot_backend.auth import TokenPayload, get_current_admin
 from hot_backend.media_assets import build_asset_descriptor
-from hot_backend.media_variants import normalize_extension
+from hot_backend.media_variants import normalize_extension, sniff_image_details
 from hot_backend.sqlite_store import HotSQLiteStore
 
 MAX_TEST_UPLOAD_SIZE_BYTES = 10 * 1024 * 1024
 PNG_BYTES = b64decode(
     "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+nmZ0AAAAASUVORK5CYII="
 )
+
+
+def _png_chunk(chunk_type: bytes, payload: bytes) -> bytes:
+    return (
+        struct.pack(">I", len(payload))
+        + chunk_type
+        + payload
+        + struct.pack(">I", zlib.crc32(chunk_type + payload) & 0xFFFFFFFF)
+    )
+
+
+def _make_png_bytes(width: int, height: int) -> bytes:
+    signature = b"\x89PNG\r\n\x1a\n"
+    ihdr = _png_chunk(
+        b"IHDR",
+        struct.pack(">IIBBBBB", width, height, 8, 2, 0, 0, 0),
+    )
+    row = b"\x00" + (b"\x33\x99\xcc" * width)
+    raw = row * height
+    idat = _png_chunk(b"IDAT", zlib.compress(raw))
+    iend = _png_chunk(b"IEND", b"")
+    return signature + ihdr + idat + iend
 
 
 def _create_admin_client(
@@ -112,6 +136,7 @@ def test_admin_media_upload_returns_asset_payload(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     uploads: list[tuple[str, str, bytes]] = []
+    upload_bytes = _make_png_bytes(640, 320)
 
     def fake_upload_to_r2(*, storage_key: str, content: bytes, content_type: str) -> None:
         uploads.append((storage_key, content_type, content))
@@ -121,7 +146,7 @@ def test_admin_media_upload_returns_asset_payload(
 
     response = client.post(
         "/api/admin/media-assets/upload",
-        files={"file": ("qr.png", PNG_BYTES, "image/png")},
+        files={"file": ("qr.png", upload_bytes, "image/png")},
     )
 
     assert response.status_code == 201
@@ -132,16 +157,28 @@ def test_admin_media_upload_returns_asset_payload(
     assert body["original_url"].startswith("https://static.cloudbase.eu.org/")
     assert body["cover_url"].startswith("https://static.cloudbase.eu.org/")
     assert body["thumb_url"].startswith("https://static.cloudbase.eu.org/")
-    assert body["width"] == 1
-    assert body["height"] == 1
+    assert body["width"] == 640
+    assert body["height"] == 320
     assert body["mime_type"] == "image/png"
     assert body["status"] == "ready"
 
-    assert uploads == [
-        (body["storage_key_original"], "image/png", PNG_BYTES),
-        (body["storage_key_cover"], "image/png", PNG_BYTES),
-        (body["storage_key_thumb"], "image/png", PNG_BYTES),
-    ]
+    assert len(uploads) == 3
+
+    original_upload = uploads[0]
+    cover_upload = uploads[1]
+    thumb_upload = uploads[2]
+
+    assert original_upload == (body["storage_key_original"], "image/png", upload_bytes)
+    assert cover_upload[0] == body["storage_key_cover"]
+    assert cover_upload[1] == "image/webp"
+    assert cover_upload[2] != upload_bytes
+    assert sniff_image_details(cover_upload[2]) == ("image/webp", (640, 320))
+
+    assert thumb_upload[0] == body["storage_key_thumb"]
+    assert thumb_upload[1] == "image/webp"
+    assert thumb_upload[2] != upload_bytes
+    assert thumb_upload[2] != cover_upload[2]
+    assert sniff_image_details(thumb_upload[2]) == ("image/webp", (480, 240))
 
     assert store.get_media_asset(body["asset_id"]) == body
 

@@ -132,6 +132,8 @@ export R2_ACCESS_KEY_ID="your-r2-access-key-id"
 export R2_SECRET_ACCESS_KEY="your-r2-secret-access-key"
 ```
 
+后台图片上传还要求运行环境提供 `ffmpeg` 和 `cwebp` 命令。这里没有新增 Python 运行时依赖，因为标准库本身无法安全地产生 WebP 缩略图，当前实现使用 `ffmpeg` 做解码/缩放，再用 `cwebp` 编码 `cover` / `thumb` 变体。
+
 ### 访问
 
 1. 访问 `http://127.0.0.1:5173/admin`

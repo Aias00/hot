@@ -1,7 +1,11 @@
 from __future__ import annotations
 
+import shutil
 import struct
+import subprocess
+import tempfile
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Final
 
 
@@ -36,6 +40,14 @@ class MediaVariantPlan:
     extension: str
     max_width: int | None = None
     max_height: int | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class PreparedVariantUpload:
+    content: bytes
+    content_type: str
+    height: int
+    width: int
 
 
 def normalize_extension(value: str) -> str:
@@ -172,6 +184,127 @@ def validate_image_upload(
         size_bytes=size_bytes,
         width=width,
     )
+
+
+def _require_binary(name: str) -> str:
+    binary_path = shutil.which(name)
+    if binary_path:
+        return binary_path
+    raise RuntimeError(f"{name} is required to generate media renditions")
+
+
+def _render_webp_variant(
+    *,
+    cwebp_path: str,
+    ffmpeg_path: str,
+    source_bytes: bytes,
+    source_extension: str,
+    variant: MediaVariantPlan,
+) -> PreparedVariantUpload:
+    with tempfile.TemporaryDirectory(prefix="hot-media-variant-") as temp_dir:
+        temp_path = Path(temp_dir)
+        source_path = temp_path / f"source.{source_extension}"
+        scaled_png_path = temp_path / f"{variant.name}.png"
+        output_path = temp_path / f"{variant.name}.webp"
+        source_path.write_bytes(source_bytes)
+
+        scale_parts = []
+        if variant.max_width is not None:
+            scale_parts.append(f"w='min(iw,{variant.max_width})'")
+        if variant.max_height is not None:
+            scale_parts.append(f"h='min(ih,{variant.max_height})'")
+        scale_parts.append("force_original_aspect_ratio=decrease")
+        scale_filter = "scale=" + ":".join(scale_parts)
+
+        scale_command = [
+            ffmpeg_path,
+            "-y",
+            "-loglevel",
+            "error",
+            "-i",
+            str(source_path),
+            "-vf",
+            scale_filter,
+            "-frames:v",
+            "1",
+            str(scaled_png_path),
+        ]
+        scale_completed = subprocess.run(scale_command, check=False, capture_output=True)
+        if scale_completed.returncode != 0:
+            stderr = scale_completed.stderr.decode("utf-8", errors="replace").strip()
+            raise RuntimeError(
+                f"ffmpeg failed while generating the '{variant.name}' rendition: {stderr or 'unknown error'}"
+            )
+
+        encode_command = [
+            cwebp_path,
+            "-quiet",
+            "-q",
+            "85",
+            str(scaled_png_path),
+            "-o",
+            str(output_path),
+        ]
+        encode_completed = subprocess.run(encode_command, check=False, capture_output=True)
+        if encode_completed.returncode != 0:
+            stderr = encode_completed.stderr.decode("utf-8", errors="replace").strip()
+            raise RuntimeError(
+                f"cwebp failed while generating the '{variant.name}' rendition: {stderr or 'unknown error'}"
+            )
+
+        output_bytes = output_path.read_bytes()
+
+    sniffed_mime_type, (width, height) = sniff_image_details(output_bytes)
+    if sniffed_mime_type != "image/webp":
+        raise RuntimeError(
+            f"Generated '{variant.name}' rendition is not WebP (got {sniffed_mime_type})"
+        )
+    if variant.max_width is not None and width > variant.max_width:
+        raise RuntimeError(
+            f"Generated '{variant.name}' rendition width {width} exceeds {variant.max_width}"
+        )
+    if variant.max_height is not None and height > variant.max_height:
+        raise RuntimeError(
+            f"Generated '{variant.name}' rendition height {height} exceeds {variant.max_height}"
+        )
+    return PreparedVariantUpload(
+        content=output_bytes,
+        content_type="image/webp",
+        height=height,
+        width=width,
+    )
+
+
+def prepare_variant_uploads(
+    *,
+    original_content: bytes,
+    original_extension: str,
+    original_mime_type: str,
+) -> dict[str, PreparedVariantUpload]:
+    ffmpeg_path = _require_binary("ffmpeg")
+    cwebp_path = _require_binary("cwebp")
+    _, (original_width, original_height) = sniff_image_details(original_content)
+    prepared: dict[str, PreparedVariantUpload] = {
+        "original": PreparedVariantUpload(
+            content=original_content,
+            content_type=original_mime_type,
+            height=original_height,
+            width=original_width,
+        )
+    }
+
+    for variant in plan_image_variants(original_extension):
+        if variant.name == "original":
+            continue
+        prepared[variant.name] = _render_webp_variant(
+            cwebp_path=cwebp_path,
+            ffmpeg_path=ffmpeg_path,
+            source_bytes=original_content,
+            source_extension=normalize_extension(original_extension),
+            variant=variant,
+        )
+
+    return prepared
 
 
 def plan_image_variants(original_ext: str) -> tuple[MediaVariantPlan, ...]:
