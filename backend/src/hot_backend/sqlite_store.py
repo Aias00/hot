@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from hot_backend.collectors.models import CollectRequest, CollectWorkflowState, SourceConfig
+from hot_backend.media_assets import build_asset_descriptor
 from hot_backend.text_clean import clean_text_fragment
 
 
@@ -2653,8 +2654,10 @@ class HotSQLiteStore:
 
     def create_media_asset(self, asset: dict[str, Any]) -> dict[str, Any]:
         now = datetime.now(timezone.utc).isoformat()
-        created_at = asset.get("created_at", now)
-        updated_at = asset.get("updated_at", now)
+        descriptor = build_asset_descriptor(
+            asset_id=asset["asset_id"],
+            original_ext=asset["original_ext"],
+        )
 
         with self.connect() as conn:
             conn.execute(
@@ -2667,28 +2670,28 @@ class HotSQLiteStore:
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
-                    asset["asset_id"],
+                    descriptor["asset_id"],
                     asset["source_kind"],
                     asset.get("source_origin_url"),
-                    asset["storage_key_original"],
-                    asset["storage_key_cover"],
-                    asset["storage_key_thumb"],
-                    asset.get("original_url"),
-                    asset.get("cover_url"),
-                    asset.get("thumb_url"),
+                    descriptor["storage_key_original"],
+                    descriptor["storage_key_cover"],
+                    descriptor["storage_key_thumb"],
+                    descriptor["original_url"],
+                    descriptor["cover_url"],
+                    descriptor["thumb_url"],
                     asset.get("mime_type"),
                     asset.get("width"),
                     asset.get("height"),
                     asset.get("status", "pending"),
                     asset.get("content_hash"),
-                    created_at,
-                    updated_at,
+                    now,
+                    now,
                 ),
             )
 
-        created = self.get_media_asset(asset["asset_id"])
+        created = self.get_media_asset(descriptor["asset_id"])
         if created is None:
-            raise ValueError(f"Media asset '{asset['asset_id']}' was not persisted")
+            raise ValueError(f"Media asset '{descriptor['asset_id']}' was not persisted")
         return created
 
     # ==================== About Page Config ====================
