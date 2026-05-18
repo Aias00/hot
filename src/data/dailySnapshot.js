@@ -26,8 +26,8 @@ export const dailySnapshot = {
     },
   ],
   masthead: {
-    volume: "VOL.2026.05.08·30 STORIES·AI HOT DAILY",
-    title: "AI HOT 日报",
+    volume: "VOL.2026.05.08·30 STORIES·AI DIGEST DAILY",
+    title: "AI Digest 日报",
     subtitle: "二〇二六年五月八日 星期五 DAILY · 每早八时",
     footerStats: [
       { value: "17", label: "今日事件" },

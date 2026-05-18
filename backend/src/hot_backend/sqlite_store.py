@@ -407,7 +407,7 @@ class HotSQLiteStore:
                         len(issue["title"]) % 9 + 8,
                         daily_snapshot["masthead"]["volume"]
                         if is_latest
-                        else f"VOL. {issue_date.replace('-', '.')} · ISSUE SNAPSHOT · AI HOT DAILY",
+                        else f"VOL. {issue_date.replace('-', '.')} · ISSUE SNAPSHOT · AI DIGEST DAILY",
                         daily_snapshot["masthead"]["title"],
                         daily_snapshot["masthead"]["subtitle"].split(" DAILY")[0]
                         if is_latest
@@ -1125,8 +1125,8 @@ class HotSQLiteStore:
                     "headline": row["title"],
                     "event_count": 0,
                     "masthead": {
-                        "eyebrow": f"VOL.{issue_date.replace('-', '.')} · COLLECTED HOT ITEMS · AI HOT DAILY",
-                        "title": "AI HOT 日报",
+                        "eyebrow": f"VOL.{issue_date.replace('-', '.')} · COLLECTED HOT ITEMS · AI DIGEST DAILY",
+                        "title": "AI Digest 日报",
                         "date": _format_cn_date(issue_date),
                         "tagline": "COLLECTED · hot-collect 采集快报",
                     },
@@ -1272,7 +1272,7 @@ class HotSQLiteStore:
                     "mode": "archive",
                     "sidebar": sidebar,
                     "archive": {
-                        "title": "AI HOT 日报 · 历史",
+                        "title": "AI Digest 日报 · 历史",
                         "subtitle": "DAILY · ARCHIVE",
                         "entries": [
                             {
@@ -1324,8 +1324,8 @@ class HotSQLiteStore:
                     "mode": "issue",
                     "sidebar": sidebar,
                     "masthead": {
-                        "eyebrow": f"VOL. {active_date.replace('-', '.')} · ISSUE SNAPSHOT · AI HOT DAILY",
-                        "title": "AI HOT 日报",
+                        "eyebrow": f"VOL. {active_date.replace('-', '.')} · ISSUE SNAPSHOT · AI DIGEST DAILY",
+                        "title": "AI Digest 日报",
                         "date": f"{active_date[:4]}年{int(active_date[5:7])}月{int(active_date[8:10])}日",
                         "tagline": "DAILY · 本地快照",
                     },

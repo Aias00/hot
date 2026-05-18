@@ -56,7 +56,7 @@ export default function NavHubPage() {
       <div className="nav-hub-wrap">
         <header className="nav-hub-header">
           <div className="nav-hub-greeting">
-            <img className="nav-hub-brand" src="/logo-wordmark.svg" alt="AIHOT" />
+            <img className="nav-hub-brand" src="/logo-wordmark.svg" alt="AI Digest" />
             <span className="nav-hub-eyebrow">/ {greeting}</span>
             <h1 className="nav-hub-title">导航中心</h1>
           </div>

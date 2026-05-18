@@ -23,12 +23,12 @@ export const infoPageDefinitions = [
   {
     path: "/about",
     title: "关于",
-    subtitle: "AI 热点聚合平台",
+    subtitle: "AI 导航与资讯摘要平台",
     metaSecondary: "React 结构化版本",
     sections: [
       {
         kicker: "About",
-        title: "AIHOT",
+        title: "AI Digest",
         copy:
           "聚合 AI 动态、导航入口与采集归档的本地优先信息站点。左侧导航、深色卡片、时间轴和推荐理由区，帮助你快速了解 AI 领域最新动态。",
         tags: ["React", "Vite", "Python", "FastAPI"],

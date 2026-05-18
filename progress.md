@@ -1,6 +1,7 @@
 # Progress
 
 ## Done
+- 已将展示层品牌统一收口为 `AI Digest / ai-digest`：浏览器标题、meta 描述、导航中心词标、关于页品牌介绍以及日报主标题文案不再保留 `AIHOT / AI HOT / ai-nav` 残留。
 - 已修正“关于”页链路：默认侧边导航现在会幂等补齐 `/about`，旧版 `about_config` 表缺少 `links_json` 列时会自动兼容迁移，且当 `qr_code_url` 为空时会默认回退到之前上传的 `/wechat-qr.png`。
 - 已修正 `/admin/nav-hub` 空白问题：后端现在会为 nav hub 表自动写入默认分类与链接种子，管理页在零分类时也会显示明确空状态，不再出现“接口空数组导致页面没内容”的情况。
 - 已将 `backend/.env` 与 `backend/data/*.sqlite3` 从版本控制中拿掉，并改成可选加载本地 env 文件，避免把管理员密码和本地 SQLite 运行数据一起推到远程。

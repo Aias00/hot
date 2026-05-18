@@ -1,6 +1,6 @@
-# AIHOT Fork
+# AI Digest
 
-基于 `Vite + React + Python FastAPI + SQLite` 的 AIHOT fork，当前后端已切换到 vendored `x_atuo` 宿主，并为后续 X / AI 自动化采集预留了完整扩展面。
+基于 `Vite + React + Python FastAPI + SQLite` 的 AI Digest，当前后端已切换到 vendored `x_atuo` 宿主，并为后续 X / AI 自动化采集预留了完整扩展面。
 
 - 左侧固定导航与主题切换
 - 深色卡片时间轴和推荐理由区

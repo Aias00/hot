@@ -42,7 +42,7 @@ describe("NavHubPage", () => {
     render(<NavHubPage />);
 
     expect(screen.getByRole("heading", { name: "导航中心" })).toBeInTheDocument();
-    expect(screen.getByAltText("AIHOT")).toBeInTheDocument();
+    expect(screen.getByAltText("AI Digest")).toBeInTheDocument();
 
     // Wait for data to load
     await waitFor(() => {
