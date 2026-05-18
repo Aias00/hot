@@ -259,6 +259,25 @@ class HotSQLiteStore:
               UNIQUE(source_id, external_id)
             );
 
+            CREATE TABLE IF NOT EXISTS media_assets (
+              asset_id TEXT PRIMARY KEY,
+              source_kind TEXT NOT NULL,
+              source_origin_url TEXT,
+              storage_key_original TEXT NOT NULL,
+              storage_key_cover TEXT NOT NULL,
+              storage_key_thumb TEXT NOT NULL,
+              original_url TEXT,
+              cover_url TEXT,
+              thumb_url TEXT,
+              mime_type TEXT,
+              width INTEGER,
+              height INTEGER,
+              status TEXT NOT NULL DEFAULT 'pending',
+              content_hash TEXT,
+              created_at TEXT NOT NULL,
+              updated_at TEXT NOT NULL
+            );
+
             CREATE TABLE IF NOT EXISTS navigation_items (
               id INTEGER PRIMARY KEY AUTOINCREMENT,
               icon TEXT NOT NULL DEFAULT '',
@@ -2578,6 +2597,99 @@ class HotSQLiteStore:
                 conn.execute(f"UPDATE collector_schedule SET {', '.join(fields)} WHERE id = 1", values)
 
         return self.get_collector_schedule()
+
+    # ==================== Media Assets ====================
+
+    def _media_asset_row_to_dict(self, row: sqlite3.Row) -> dict[str, Any]:
+        return {
+            "asset_id": row["asset_id"],
+            "source_kind": row["source_kind"],
+            "source_origin_url": row["source_origin_url"],
+            "storage_key_original": row["storage_key_original"],
+            "storage_key_cover": row["storage_key_cover"],
+            "storage_key_thumb": row["storage_key_thumb"],
+            "original_url": row["original_url"],
+            "cover_url": row["cover_url"],
+            "thumb_url": row["thumb_url"],
+            "mime_type": row["mime_type"],
+            "width": row["width"],
+            "height": row["height"],
+            "status": row["status"],
+            "content_hash": row["content_hash"],
+            "created_at": row["created_at"],
+            "updated_at": row["updated_at"],
+        }
+
+    def list_media_assets(self) -> list[dict[str, Any]]:
+        with self.connect() as conn:
+            rows = conn.execute(
+                """
+                SELECT asset_id, source_kind, source_origin_url,
+                       storage_key_original, storage_key_cover, storage_key_thumb,
+                       original_url, cover_url, thumb_url, mime_type, width, height,
+                       status, content_hash, created_at, updated_at
+                FROM media_assets
+                ORDER BY created_at DESC, asset_id DESC
+                """
+            ).fetchall()
+        return [self._media_asset_row_to_dict(row) for row in rows]
+
+    def get_media_asset(self, asset_id: str) -> dict[str, Any] | None:
+        with self.connect() as conn:
+            row = conn.execute(
+                """
+                SELECT asset_id, source_kind, source_origin_url,
+                       storage_key_original, storage_key_cover, storage_key_thumb,
+                       original_url, cover_url, thumb_url, mime_type, width, height,
+                       status, content_hash, created_at, updated_at
+                FROM media_assets
+                WHERE asset_id = ?
+                """,
+                (asset_id,),
+            ).fetchone()
+        if row is None:
+            return None
+        return self._media_asset_row_to_dict(row)
+
+    def create_media_asset(self, asset: dict[str, Any]) -> dict[str, Any]:
+        now = datetime.now(timezone.utc).isoformat()
+        created_at = asset.get("created_at", now)
+        updated_at = asset.get("updated_at", now)
+
+        with self.connect() as conn:
+            conn.execute(
+                """
+                INSERT INTO media_assets (
+                  asset_id, source_kind, source_origin_url,
+                  storage_key_original, storage_key_cover, storage_key_thumb,
+                  original_url, cover_url, thumb_url, mime_type, width, height,
+                  status, content_hash, created_at, updated_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    asset["asset_id"],
+                    asset["source_kind"],
+                    asset.get("source_origin_url"),
+                    asset["storage_key_original"],
+                    asset["storage_key_cover"],
+                    asset["storage_key_thumb"],
+                    asset.get("original_url"),
+                    asset.get("cover_url"),
+                    asset.get("thumb_url"),
+                    asset.get("mime_type"),
+                    asset.get("width"),
+                    asset.get("height"),
+                    asset.get("status", "pending"),
+                    asset.get("content_hash"),
+                    created_at,
+                    updated_at,
+                ),
+            )
+
+        created = self.get_media_asset(asset["asset_id"])
+        if created is None:
+            raise ValueError(f"Media asset '{asset['asset_id']}' was not persisted")
+        return created
 
     # ==================== About Page Config ====================
 
