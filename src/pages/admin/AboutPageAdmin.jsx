@@ -12,6 +12,7 @@ export default function AboutPageAdmin() {
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState(null);
 
   useEffect(() => {
@@ -92,6 +93,46 @@ export default function AboutPageAdmin() {
     setSaving(false);
   };
 
+  const handleQrUpload = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) {
+      return;
+    }
+
+    setUploading(true);
+    setMessage(null);
+
+    try {
+      const token = localStorage.getItem("admin_token");
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const res = await fetch("/api/admin/media-assets/upload", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+      });
+
+      if (!res.ok) {
+        throw new Error("upload failed");
+      }
+
+      const asset = await res.json();
+      setConfig((prev) => ({
+        ...prev,
+        qr_code_url: asset.original_url || prev.qr_code_url,
+      }));
+      setMessage({ type: "success", text: "二维码图片上传成功" });
+    } catch (error) {
+      setMessage({ type: "error", text: "二维码图片上传失败" });
+    } finally {
+      event.target.value = "";
+      setUploading(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="admin-page">
@@ -139,6 +180,21 @@ export default function AboutPageAdmin() {
             onChange={handleChange("qr_code_url")}
             placeholder="/wechat-qr.png"
           />
+          <label htmlFor="qr_code_upload">上传二维码图片</label>
+          <input
+            id="qr_code_upload"
+            type="file"
+            accept="image/*"
+            onChange={handleQrUpload}
+            disabled={uploading}
+          />
+          {config.qr_code_url && (
+            <img
+              src={config.qr_code_url}
+              alt="当前二维码预览"
+              style={{ width: "160px", maxWidth: "100%", marginTop: "12px" }}
+            />
+          )}
         </div>
 
         <div className="admin-form__field">
@@ -215,7 +271,7 @@ export default function AboutPageAdmin() {
             className="admin-form__submit"
             type="button"
             onClick={handleSave}
-            disabled={saving}
+            disabled={saving || uploading}
           >
             {saving ? "保存中..." : "保存更改"}
           </button>

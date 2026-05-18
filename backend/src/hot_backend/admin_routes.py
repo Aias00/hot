@@ -6,6 +6,7 @@ from email.parser import BytesParser
 from email.policy import default
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
+from pydantic import BaseModel, Field
 
 from hot_backend.auth import (
     TokenResponse,
@@ -20,6 +21,20 @@ from hot_backend.media_assets import create_uploaded_media_asset
 from hot_backend.media_variants import MediaUploadValidationError
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
+
+
+class LinkItem(BaseModel):
+    label: str
+    url: str
+
+
+class AboutConfigUpdate(BaseModel):
+    title: str = ""
+    description: str = ""
+    qr_code_url: str = ""
+    follow_link: str = ""
+    contact_info: str = ""
+    links: list[LinkItem] = Field(default_factory=list)
 
 
 def _extract_upload_from_multipart_request(
@@ -494,17 +509,17 @@ def get_about_config_admin(
 
 @router.put("/about")
 def update_about_config(
-    config: dict,
+    config: AboutConfigUpdate,
     _: TokenPayload = Depends(get_current_admin),
 ) -> dict:
     """Update about page configuration."""
     from hot_backend.sqlite_store import get_store
 
     return get_store().update_about_config(
-        title=config.get("title", ""),
-        description=config.get("description", ""),
-        qr_code_url=config.get("qr_code_url", ""),
-        follow_link=config.get("follow_link", ""),
-        contact_info=config.get("contact_info", ""),
-        links=config.get("links", []),
+        title=config.title,
+        description=config.description,
+        qr_code_url=config.qr_code_url,
+        follow_link=config.follow_link,
+        contact_info=config.contact_info,
+        links=[link.model_dump() for link in config.links],
     )
