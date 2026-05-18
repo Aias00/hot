@@ -6,12 +6,13 @@ import struct
 import zlib
 
 import pytest
+from curl_cffi import requests as curl_requests
 from fastapi.testclient import TestClient
 
 from hot_backend.app import create_app
 from hot_backend.auth import TokenPayload, get_current_admin
-from hot_backend.media_assets import build_asset_descriptor
-from hot_backend.media_variants import normalize_extension, sniff_image_details
+from hot_backend.media_assets import build_asset_descriptor, create_uploaded_media_asset
+from hot_backend.media_variants import PreparedVariantUpload, normalize_extension, sniff_image_details
 from hot_backend.sqlite_store import HotSQLiteStore
 
 MAX_TEST_UPLOAD_SIZE_BYTES = 10 * 1024 * 1024
@@ -40,6 +41,17 @@ def _make_png_bytes(width: int, height: int) -> bytes:
     idat = _png_chunk(b"IDAT", zlib.compress(raw))
     iend = _png_chunk(b"IEND", b"")
     return signature + ihdr + idat + iend
+
+
+def _make_corrupt_png_bytes(width: int, height: int) -> bytes:
+    signature = b"\x89PNG\r\n\x1a\n"
+    ihdr = _png_chunk(
+        b"IHDR",
+        struct.pack(">IIBBBBB", width, height, 8, 2, 0, 0, 0),
+    )
+    invalid_idat = _png_chunk(b"IDAT", b"not-a-valid-zlib-stream")
+    iend = _png_chunk(b"IEND", b"")
+    return signature + ihdr + invalid_idat + iend
 
 
 def _create_admin_client(
@@ -202,3 +214,180 @@ def test_admin_media_upload_rejects_oversized_files(
 
     assert response.status_code == 413
     assert response.json()["detail"] == "Uploaded file exceeds the 10485760 byte limit"
+
+
+def test_admin_media_upload_maps_r2_request_exception_to_503(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    client, _ = _create_admin_client(tmp_path, monkeypatch)
+    monkeypatch.setattr(
+        "hot_backend.media_assets.prepare_variant_uploads",
+        lambda **_: {
+            "original": PreparedVariantUpload(
+                content=PNG_BYTES,
+                content_type="image/png",
+                width=1,
+                height=1,
+            ),
+            "cover": PreparedVariantUpload(
+                content=b"RIFF\x1a\x00\x00\x00WEBPVP8 \x0c\x00\x00\x000\x01\x00\x9d\x01*\x01\x00\x01\x00\x00\x00",
+                content_type="image/webp",
+                width=1,
+                height=1,
+            ),
+            "thumb": PreparedVariantUpload(
+                content=b"RIFF\x1a\x00\x00\x00WEBPVP8 \x0c\x00\x00\x000\x01\x00\x9d\x01*\x01\x00\x01\x00\x00\x00",
+                content_type="image/webp",
+                width=1,
+                height=1,
+            ),
+        },
+    )
+    monkeypatch.setattr(
+        "hot_backend.media_assets.get_r2_config",
+        lambda: type(
+            "DummyR2Config",
+            (),
+            {
+                "access_key_id": "key",
+                "account_id": "acct",
+                "bucket": "bucket",
+                "secret_access_key": "secret",
+            },
+        )(),
+    )
+
+    def raise_timeout(*args, **kwargs):
+        raise curl_requests.exceptions.Timeout("network timeout")
+
+    monkeypatch.setattr("hot_backend.media_assets.requests.put", raise_timeout)
+
+    response = client.post(
+        "/api/admin/media-assets/upload",
+        files={"file": ("qr.png", PNG_BYTES, "image/png")},
+    )
+
+    assert response.status_code == 503
+    assert response.json()["detail"] == "Media storage upload is temporarily unavailable"
+
+
+def test_admin_media_upload_maps_corrupt_decode_failure_to_400(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    client, _ = _create_admin_client(tmp_path, monkeypatch)
+
+    response = client.post(
+        "/api/admin/media-assets/upload",
+        files={"file": ("broken.png", _make_corrupt_png_bytes(64, 64), "image/png")},
+    )
+
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Uploaded image could not be decoded into required renditions"
+
+
+def test_uploaded_media_asset_cleans_up_on_later_upload_failure(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    uploaded: list[str] = []
+    deleted: list[str] = []
+    store = HotSQLiteStore(Path("/tmp/unused-media-assets.sqlite3"))
+
+    monkeypatch.setattr(
+        "hot_backend.media_assets.prepare_variant_uploads",
+        lambda **_: {
+            "original": PreparedVariantUpload(
+                content=PNG_BYTES,
+                content_type="image/png",
+                width=1,
+                height=1,
+            ),
+            "cover": PreparedVariantUpload(
+                content=b"cover-bytes",
+                content_type="image/webp",
+                width=1,
+                height=1,
+            ),
+            "thumb": PreparedVariantUpload(
+                content=b"thumb-bytes",
+                content_type="image/webp",
+                width=1,
+                height=1,
+            ),
+        },
+    )
+
+    def fake_upload_to_r2(*, storage_key: str, content: bytes, content_type: str) -> None:
+        uploaded.append(storage_key)
+        if storage_key.startswith("cover/"):
+            raise RuntimeError("Media storage upload is temporarily unavailable")
+
+    def fake_delete_from_r2(*, storage_key: str) -> None:
+        deleted.append(storage_key)
+
+    monkeypatch.setattr("hot_backend.media_assets.upload_to_r2", fake_upload_to_r2)
+    monkeypatch.setattr("hot_backend.media_assets.delete_from_r2", fake_delete_from_r2)
+
+    with pytest.raises(RuntimeError, match="Media storage upload is temporarily unavailable"):
+        create_uploaded_media_asset(
+            content=PNG_BYTES,
+            content_type="image/png",
+            store=store,
+        )
+
+    assert uploaded[0].startswith("original/")
+    assert uploaded[1].startswith("cover/")
+    assert deleted == [uploaded[0]]
+
+
+def test_uploaded_media_asset_cleans_up_when_db_persistence_fails(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    uploaded: list[str] = []
+    deleted: list[str] = []
+
+    class FailingStore:
+        def create_media_asset(self, asset: dict) -> dict:
+            raise RuntimeError("database write failed")
+
+    monkeypatch.setattr(
+        "hot_backend.media_assets.prepare_variant_uploads",
+        lambda **_: {
+            "original": PreparedVariantUpload(
+                content=PNG_BYTES,
+                content_type="image/png",
+                width=1,
+                height=1,
+            ),
+            "cover": PreparedVariantUpload(
+                content=b"cover-bytes",
+                content_type="image/webp",
+                width=1,
+                height=1,
+            ),
+            "thumb": PreparedVariantUpload(
+                content=b"thumb-bytes",
+                content_type="image/webp",
+                width=1,
+                height=1,
+            ),
+        },
+    )
+    monkeypatch.setattr(
+        "hot_backend.media_assets.upload_to_r2",
+        lambda *, storage_key, content, content_type: uploaded.append(storage_key),
+    )
+    monkeypatch.setattr(
+        "hot_backend.media_assets.delete_from_r2",
+        lambda *, storage_key: deleted.append(storage_key),
+    )
+
+    with pytest.raises(RuntimeError, match="database write failed"):
+        create_uploaded_media_asset(
+            content=PNG_BYTES,
+            content_type="image/png",
+            store=FailingStore(),
+        )
+
+    assert deleted == uploaded

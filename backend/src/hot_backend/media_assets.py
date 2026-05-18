@@ -12,6 +12,7 @@ from urllib.parse import quote
 from curl_cffi import requests
 
 from hot_backend.media_variants import (
+    MediaUploadValidationError,
     normalize_extension,
     plan_image_variants,
     prepare_variant_uploads,
@@ -90,7 +91,8 @@ def _build_r2_request(
     *,
     config: R2Config,
     content: bytes,
-    content_type: str,
+    content_type: str | None,
+    method: str,
     storage_key: str,
 ) -> tuple[str, dict[str, str]]:
     now = datetime.now(UTC)
@@ -100,16 +102,16 @@ def _build_r2_request(
     canonical_uri = f"/{config.bucket}/{quoted_storage_key}"
     host = f"{config.account_id}.r2.cloudflarestorage.com"
     payload_hash = hashlib.sha256(content).hexdigest()
-    canonical_headers = (
-        f"content-type:{content_type}\n"
-        f"host:{host}\n"
-        f"x-amz-content-sha256:{payload_hash}\n"
-        f"x-amz-date:{amz_date}\n"
-    )
-    signed_headers = "content-type;host;x-amz-content-sha256;x-amz-date"
+    canonical_headers_parts = [f"host:{host}", f"x-amz-content-sha256:{payload_hash}", f"x-amz-date:{amz_date}"]
+    signed_header_names = ["host", "x-amz-content-sha256", "x-amz-date"]
+    if content_type:
+        canonical_headers_parts.insert(0, f"content-type:{content_type}")
+        signed_header_names.insert(0, "content-type")
+    canonical_headers = "\n".join(canonical_headers_parts) + "\n"
+    signed_headers = ";".join(signed_header_names)
     canonical_request = "\n".join(
         (
-            "PUT",
+            method,
             canonical_uri,
             "",
             canonical_headers,
@@ -142,10 +144,10 @@ def _build_r2_request(
         f"https://{host}{canonical_uri}",
         {
             "Authorization": authorization,
-            "Content-Type": content_type,
             "Host": host,
             "x-amz-content-sha256": payload_hash,
             "x-amz-date": amz_date,
+            **({"Content-Type": content_type} if content_type else {}),
         },
     )
 
@@ -161,20 +163,46 @@ def _derive_signature_key(*, secret_access_key: str, date_stamp: str) -> bytes:
     return hmac.new(k_service, b"aws4_request", hashlib.sha256).digest()
 
 
+def _cleanup_uploaded_objects(uploaded_storage_keys: list[str]) -> None:
+    for storage_key in uploaded_storage_keys:
+        try:
+            delete_from_r2(storage_key=storage_key)
+        except RuntimeError:
+            continue
+
+
 def upload_to_r2(*, storage_key: str, content: bytes, content_type: str) -> None:
     config = get_r2_config()
     url, headers = _build_r2_request(
         config=config,
         content=content,
         content_type=content_type,
+        method="PUT",
         storage_key=storage_key,
     )
-    response = requests.put(url, data=content, headers=headers, timeout=30)
+    try:
+        response = requests.put(url, data=content, headers=headers, timeout=30)
+    except requests.exceptions.RequestException as exc:
+        raise RuntimeError("Media storage upload is temporarily unavailable") from exc
     if response.status_code not in {200, 201, 204}:
-        detail = response.text[:200].strip()
-        raise RuntimeError(
-            f"R2 upload failed for '{storage_key}' with status {response.status_code}: {detail}"
-        )
+        raise RuntimeError("Media storage upload is temporarily unavailable")
+
+
+def delete_from_r2(*, storage_key: str) -> None:
+    config = get_r2_config()
+    url, headers = _build_r2_request(
+        config=config,
+        content=b"",
+        content_type=None,
+        method="DELETE",
+        storage_key=storage_key,
+    )
+    try:
+        response = requests.delete(url, headers=headers, timeout=30)
+    except requests.exceptions.RequestException as exc:
+        raise RuntimeError("Media storage cleanup is temporarily unavailable") from exc
+    if response.status_code not in {200, 204, 404}:
+        raise RuntimeError("Media storage cleanup is temporarily unavailable")
 
 
 def create_uploaded_media_asset(
@@ -196,25 +224,31 @@ def create_uploaded_media_asset(
         original_mime_type=validated.mime_type,
     )
 
-    for variant in plan_image_variants(validated.extension):
-        storage_key = descriptor[f"storage_key_{variant.name}"]
-        prepared = prepared_uploads[variant.name]
-        upload_to_r2(
-            storage_key=storage_key,
-            content=prepared.content,
-            content_type=prepared.content_type,
-        )
+    uploaded_storage_keys: list[str] = []
+    try:
+        for variant in plan_image_variants(validated.extension):
+            storage_key = descriptor[f"storage_key_{variant.name}"]
+            prepared = prepared_uploads[variant.name]
+            upload_to_r2(
+                storage_key=storage_key,
+                content=prepared.content,
+                content_type=prepared.content_type,
+            )
+            uploaded_storage_keys.append(storage_key)
 
-    return store.create_media_asset(
-        {
-            "asset_id": asset_id,
-            "content_hash": hashlib.sha256(content).hexdigest(),
-            "height": validated.height,
-            "mime_type": validated.mime_type,
-            "original_ext": validated.extension,
-            "source_kind": "uploaded",
-            "source_origin_url": None,
-            "status": "ready",
-            "width": validated.width,
-        }
-    )
+        return store.create_media_asset(
+            {
+                "asset_id": asset_id,
+                "content_hash": hashlib.sha256(content).hexdigest(),
+                "height": validated.height,
+                "mime_type": validated.mime_type,
+                "original_ext": validated.extension,
+                "source_kind": "uploaded",
+                "source_origin_url": None,
+                "status": "ready",
+                "width": validated.width,
+            }
+        )
+    except Exception:
+        _cleanup_uploaded_objects(uploaded_storage_keys)
+        raise

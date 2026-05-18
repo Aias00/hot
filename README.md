@@ -174,6 +174,8 @@ export R2_SECRET_ACCESS_KEY="your-r2-secret-access-key"
 媒体资产：
 
 - `POST /api/admin/media-assets/upload` - 上传后台图片，返回 `asset_id`、`original_url`、`cover_url`、`thumb_url`
+  - 无法解码或无法生成变体的坏图会返回 `400`
+  - R2/网络暂时不可用时会返回 `503`
 
 公开 API：
 

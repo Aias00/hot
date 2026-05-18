@@ -190,7 +190,7 @@ def _require_binary(name: str) -> str:
     binary_path = shutil.which(name)
     if binary_path:
         return binary_path
-    raise RuntimeError(f"{name} is required to generate media renditions")
+    raise RuntimeError("Media rendition generation is temporarily unavailable")
 
 
 def _render_webp_variant(
@@ -231,9 +231,9 @@ def _render_webp_variant(
         ]
         scale_completed = subprocess.run(scale_command, check=False, capture_output=True)
         if scale_completed.returncode != 0:
-            stderr = scale_completed.stderr.decode("utf-8", errors="replace").strip()
-            raise RuntimeError(
-                f"ffmpeg failed while generating the '{variant.name}' rendition: {stderr or 'unknown error'}"
+            raise MediaUploadValidationError(
+                "Uploaded image could not be decoded into required renditions",
+                status_code=400,
             )
 
         encode_command = [
@@ -247,9 +247,9 @@ def _render_webp_variant(
         ]
         encode_completed = subprocess.run(encode_command, check=False, capture_output=True)
         if encode_completed.returncode != 0:
-            stderr = encode_completed.stderr.decode("utf-8", errors="replace").strip()
-            raise RuntimeError(
-                f"cwebp failed while generating the '{variant.name}' rendition: {stderr or 'unknown error'}"
+            raise MediaUploadValidationError(
+                "Uploaded image could not be decoded into required renditions",
+                status_code=400,
             )
 
         output_bytes = output_path.read_bytes()
