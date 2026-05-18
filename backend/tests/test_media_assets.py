@@ -71,6 +71,16 @@ def _create_admin_client(
     return TestClient(app), store
 
 
+def _create_client(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> tuple[TestClient, HotSQLiteStore]:
+    store = HotSQLiteStore(tmp_path / "media-assets.sqlite3")
+    store.initialize()
+    monkeypatch.setattr("hot_backend.sqlite_store.get_store", lambda: store)
+    return TestClient(create_app()), store
+
+
 def test_media_asset_urls_follow_static_cloudbase_contract() -> None:
     asset = build_asset_descriptor(
         asset_id="abc123",
@@ -214,6 +224,57 @@ def test_admin_media_upload_rejects_oversized_files(
 
     assert response.status_code == 413
     assert response.json()["detail"] == "Uploaded file exceeds the 10485760 byte limit"
+
+
+def test_admin_about_put_requires_authentication(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    client, _ = _create_client(tmp_path, monkeypatch)
+
+    response = client.put(
+        "/api/admin/about",
+        json={
+            "title": "关于我们",
+            "description": "desc",
+            "qr_code_url": "https://static.cloudbase.eu.org/original/asset-123.png",
+            "follow_link": "",
+            "contact_info": "",
+            "links": [],
+        },
+    )
+
+    assert response.status_code == 401
+
+
+def test_admin_about_put_persists_config_for_authenticated_admin(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    client, store = _create_admin_client(tmp_path, monkeypatch)
+
+    response = client.put(
+        "/api/admin/about",
+        json={
+            "title": "关于我们",
+            "description": "desc",
+            "qr_code_url": "https://static.cloudbase.eu.org/original/asset-123.png",
+            "follow_link": "https://example.com/follow",
+            "contact_info": "wechat: cloudbase",
+            "links": [{"label": "官网", "url": "https://example.com"}],
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "title": "关于我们",
+        "description": "desc",
+        "qr_code_url": "https://static.cloudbase.eu.org/original/asset-123.png",
+        "follow_link": "https://example.com/follow",
+        "contact_info": "wechat: cloudbase",
+        "links": [{"label": "官网", "url": "https://example.com"}],
+    }
+    assert store.get_about_config() == response.json()
 
 
 def test_admin_media_upload_maps_r2_request_exception_to_503(

@@ -179,6 +179,7 @@ export default function AboutPageAdmin() {
             value={config.qr_code_url}
             onChange={handleChange("qr_code_url")}
             placeholder="/wechat-qr.png"
+            disabled={uploading}
           />
           <label htmlFor="qr_code_upload">上传二维码图片</label>
           <input
