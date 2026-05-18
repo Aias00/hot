@@ -7,7 +7,7 @@ import Sidebar from "./Sidebar";
 vi.mock("../hooks/useNavigation.jsx", () => ({
   useNavigation: () => ({
     navItems: [
-      { icon: "◫", label: "导航中心", to: "/nav-hub" },
+      { icon: "◫", label: "导航中心", to: "/" },
       { icon: "☰", label: "全部 AI 动态", to: "/all" },
       { icon: "◉", label: "关于", to: "/about" },
     ],

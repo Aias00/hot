@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 
 // Fallback navigation items if API fails
 const DEFAULT_NAV_ITEMS = [
-  { icon: "◫", label: "导航中心", to: "/nav-hub" },
+  { icon: "◫", label: "导航中心", to: "/" },
   { icon: "☰", label: "全部 AI 动态", to: "/all" },
   { icon: "◉", label: "关于", to: "/about" },
 ];
@@ -23,7 +23,7 @@ export function useNavigation() {
             .map((item) => ({
               icon: item.icon,
               label: item.label,
-              to: item.to,
+              to: item.label === "导航中心" && item.to === "/nav-hub" ? "/" : item.to,
             }));
           if (items.length > 0) {
             setNavItems(items);

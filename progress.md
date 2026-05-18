@@ -1,6 +1,7 @@
 # Progress
 
 ## Done
+- 已把站点首页默认入口改为导航页：根路由 `/` 现在直接渲染“导航中心”，原隐藏的“精选”页改为显式保留在 `/featured`，同时对现有导航配置里的旧 `/nav-hub` 入口做了前端映射与后端幂等回写兼容。
 - 已修正生产环境“定时采集启用但不运行”的根因：`x_atuo` 应用壳使用 lifespan，原先 hot 的 scheduler 没有真正接到启动链路；现已改为与 `x_atuo` 共用 lifespan 包装，并让管理后台保存配置后立即 `apply_scheduler_config()`，生产机重启后 `next_run_at` 会按当前时间重算。
 - 已将展示层品牌统一收口为 `AI Digest / ai-digest`：浏览器标题、meta 描述、导航中心词标、关于页品牌介绍以及日报主标题文案不再保留 `AIHOT / AI HOT / ai-nav` 残留。
 - 已修正“关于”页链路：默认侧边导航现在会幂等补齐 `/about`，旧版 `about_config` 表缺少 `links_json` 列时会自动兼容迁移，且当 `qr_code_url` 为空时会默认回退到之前上传的 `/wechat-qr.png`。

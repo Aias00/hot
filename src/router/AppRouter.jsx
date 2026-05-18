@@ -40,18 +40,19 @@ export default function AppRouter({
           </Route>
 
           {/* Main app routes */}
-          <Route
-            element={
-              <AppLayout
-                themePreference={themePreference}
-                onThemeChange={onThemeChange}
-              />
-            }
-          >
-            {feedPageDefinitions.map((page) => (
-              <Route
-                key={page.path}
-                path={page.path}
+        <Route
+          element={
+            <AppLayout
+              themePreference={themePreference}
+              onThemeChange={onThemeChange}
+            />
+          }
+        >
+          <Route index element={<NavHubPage />} />
+          {feedPageDefinitions.map((page) => (
+            <Route
+              key={page.path}
+              path={page.path}
                 element={<FeedPage page={page} />}
               />
             ))}

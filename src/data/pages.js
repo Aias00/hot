@@ -1,6 +1,6 @@
 export const feedPageDefinitions = [
   {
-    path: "/",
+    path: "/featured",
     upstreamPath: "/",
     title: "精选",
     subtitle: "AI 自动挑选的高价值内容",

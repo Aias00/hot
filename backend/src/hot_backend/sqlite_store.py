@@ -2233,13 +2233,22 @@ class HotSQLiteStore:
         """Seed default navigation items and backfill missing defaults."""
         now = datetime.now(timezone.utc).isoformat()
         default_items = [
-            {"icon": "◫", "label": "导航中心", "to": "/nav-hub", "sort_order": 0},
+            {"icon": "◫", "label": "导航中心", "to": "/", "sort_order": 0},
             {"icon": "☰", "label": "全部 AI 动态", "to": "/all", "sort_order": 1},
             {"icon": "◉", "label": "关于", "to": "/about", "sort_order": 2},
         ]
         with self.connect() as conn:
             count = conn.execute("SELECT COUNT(*) FROM navigation_items").fetchone()[0]
             max_order = conn.execute("SELECT COALESCE(MAX(sort_order), -1) FROM navigation_items").fetchone()[0]
+            legacy_nav_hub = conn.execute(
+                'SELECT id FROM navigation_items WHERE label = ? AND "to" = ?',
+                ("导航中心", "/nav-hub"),
+            ).fetchone()
+            if legacy_nav_hub:
+                conn.execute(
+                    'UPDATE navigation_items SET "to" = ?, updated_at = ? WHERE id = ?',
+                    ("/", now, legacy_nav_hub[0]),
+                )
             for item in default_items:
                 existing = conn.execute(
                     'SELECT id FROM navigation_items WHERE "to" = ?',
