@@ -2,7 +2,7 @@
 
 ## Done
 - 已完成 Cloudflare R2 图片管线 Phase 1 的 rollout 文档收口：`README.md` 现在明确列出 R2/CDN 必填环境变量、公开 URL 合同、`/admin/about` 上传二维码的使用流程，以及 `original_url / cover_url / thumb_url` 的预期消费位置。
-- 已记录本轮上线边界：后台上传现在已经统一走 `static.cloudbase.eu.org` 资产合同并回填到 `about_config.qr_code_url`，collector 侧远程图片镜像继续刻意推迟到下一阶段，避免当前 Phase 1 把两条链路耦合。
+- 已记录本轮上线边界：后台上传现在已经统一走默认推荐的 `static.cloudbase.eu.org` 资产合同（运行时仍可由 `MEDIA_CDN_BASE_URL` 覆盖）；上传动作会先把返回的 `original_url` 填进表单的 `qr_code_url`，只有用户随后执行单独的保存动作，才会真正持久化到 `about_config.qr_code_url`。collector 侧远程图片镜像继续刻意推迟到下一阶段，避免当前 Phase 1 把两条链路耦合。
 - 已把站点首页默认入口改为导航页：根路由 `/` 现在直接渲染“导航中心”，原隐藏的“精选”页改为显式保留在 `/featured`，同时对现有导航配置里的旧 `/nav-hub` 入口做了前端映射与后端幂等回写兼容。
 - 已修正生产环境“定时采集启用但不运行”的根因：`x_atuo` 应用壳使用 lifespan，原先 hot 的 scheduler 没有真正接到启动链路；现已改为与 `x_atuo` 共用 lifespan 包装，并让管理后台保存配置后立即 `apply_scheduler_config()`，生产机重启后 `next_run_at` 会按当前时间重算。
 - 已将展示层品牌统一收口为 `AI Digest / ai-digest`：浏览器标题、meta 描述、导航中心词标、关于页品牌介绍以及日报主标题文案不再保留 `AIHOT / AI HOT / ai-nav` 残留。

@@ -138,7 +138,7 @@ export R2_SECRET_ACCESS_KEY="your-r2-secret-access-key"
 - `https://static.cloudbase.eu.org/cover/<asset-id>.webp`
 - `https://static.cloudbase.eu.org/thumb/<asset-id>.webp`
 
-建议保持 `MEDIA_CDN_BASE_URL` 指向 `https://static.cloudbase.eu.org`，这样管理后台上传、公开 `/about` 页面和后续采集镜像链路都会落在同一套稳定 URL 约定下。
+`https://static.cloudbase.eu.org` 是当前默认且推荐的 rollout host；运行时也可以通过 `MEDIA_CDN_BASE_URL` 覆盖到其他 CDN 域名，但推荐优先保持默认值，这样管理后台上传、公开 `/about` 页面和后续采集镜像链路都会落在同一套稳定 URL 约定下。
 
 后台图片上传还要求运行环境提供 `ffmpeg` 和 `cwebp` 命令。这里没有新增 Python 运行时依赖，因为标准库本身无法安全地产生 WebP 缩略图，当前实现使用 `ffmpeg` 做解码/缩放，再用 `cwebp` 编码 `cover` / `thumb` 变体。
 
@@ -160,11 +160,12 @@ export R2_SECRET_ACCESS_KEY="your-r2-secret-access-key"
 2. 进入“关于页面”管理页
 3. 在“上传二维码图片”中选择图片文件
 4. 上传成功后，表单里的 `qr_code_url` 会自动写入返回的 `original_url`
-5. 点击保存后，公开 `/about` 页面会继续通过既有 `qr_code_url` 字段渲染二维码图片
+5. 管理页会立即用这条同样的 `original_url` 做当前二维码预览
+6. 点击保存后，这个 `qr_code_url` 才会持久化到 `about_config.qr_code_url`，公开 `/about` 页面随后继续消费同一条 URL 渲染二维码图片
 
 当前推荐的 URL 用法如下：
 
-- `original_url`：用于 `/admin/about` 的二维码图，保留原始清晰度，避免扫码质量下降
+- `original_url`：用于 `/admin/about` 的 `qr_code_url` 流程；管理页上传成功后会先把它填进表单并预览，同一条 URL 在保存后会由公开 `/about` 页面消费，保留原始清晰度以避免扫码质量下降
 - `cover_url`：为后续列表卡片或较大封面位预留
 - `thumb_url`：为后续小缩略图列表位预留
 
