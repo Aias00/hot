@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from email.parser import BytesParser
+from email.policy import default
+
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 
 from hot_backend.auth import (
     TokenResponse,
@@ -13,8 +16,41 @@ from hot_backend.auth import (
     verify_token,
 )
 from hot_backend.auth import TokenPayload
+from hot_backend.media_assets import create_uploaded_media_asset
+from hot_backend.media_variants import MediaUploadValidationError
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
+
+
+def _extract_upload_from_multipart_request(
+    *,
+    body: bytes,
+    content_type: str | None,
+) -> tuple[bytes, str]:
+    if not content_type or "multipart/form-data" not in content_type.lower():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Request must use multipart/form-data",
+        )
+
+    message = BytesParser(policy=default).parsebytes(
+        (
+            f"Content-Type: {content_type}\r\n"
+            "MIME-Version: 1.0\r\n"
+            "\r\n"
+        ).encode("utf-8")
+        + body
+    )
+
+    for part in message.iter_parts():
+        if part.get_param("name", header="Content-Disposition") != "file":
+            continue
+        return part.get_payload(decode=True) or b"", part.get_content_type()
+
+    raise HTTPException(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        detail="Multipart upload must include a 'file' field",
+    )
 
 
 # ==================== Authentication ====================
@@ -416,6 +452,34 @@ async def run_collection_now(
 
 
 # ==================== About Page ====================
+
+
+@router.post("/media-assets/upload", status_code=status.HTTP_201_CREATED)
+async def upload_media_asset(
+    request: Request,
+    _: TokenPayload = Depends(get_current_admin),
+) -> dict:
+    """Upload an admin-managed image into the media asset pipeline."""
+    from hot_backend.sqlite_store import get_store
+
+    try:
+        body = await request.body()
+        content, content_type = _extract_upload_from_multipart_request(
+            body=body,
+            content_type=request.headers.get("content-type"),
+        )
+        return create_uploaded_media_asset(
+            content=content,
+            content_type=content_type,
+            store=get_store(),
+        )
+    except MediaUploadValidationError as exc:
+        raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
+    except RuntimeError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=str(exc),
+        ) from exc
 
 
 @router.get("/about")

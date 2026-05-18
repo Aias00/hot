@@ -122,6 +122,16 @@ cp backend/.env.example backend/.env
 export JWT_SECRET="your-jwt-secret"
 ```
 
+如果要启用后台图片上传，还需要配置 Cloudflare R2 和公开 CDN 域名：
+
+```bash
+export MEDIA_CDN_BASE_URL="https://static.cloudbase.eu.org"
+export R2_ACCOUNT_ID="your-cloudflare-account-id"
+export R2_BUCKET="your-r2-bucket"
+export R2_ACCESS_KEY_ID="your-r2-access-key-id"
+export R2_SECRET_ACCESS_KEY="your-r2-secret-access-key"
+```
+
 ### 访问
 
 1. 访问 `http://127.0.0.1:5173/admin`
@@ -132,6 +142,7 @@ export JWT_SECRET="your-jwt-secret"
 
 - **采集源管理**：添加、编辑、删除、启用/禁用 RSS 采集源
 - **导航管理**：添加、编辑、删除、排序导航链接
+- **图片资产上传**：上传后台图片并返回 `static.cloudbase.eu.org` 下的稳定 CDN URL（`original` / `cover` / `thumb`）
 
 ### Admin APIs
 
@@ -157,6 +168,10 @@ export JWT_SECRET="your-jwt-secret"
 - `DELETE /api/admin/navigation/:id` - 删除
 - `PATCH /api/admin/navigation/:id/toggle` - 启用/禁用
 - `PUT /api/admin/navigation/reorder` - 重排序
+
+媒体资产：
+
+- `POST /api/admin/media-assets/upload` - 上传后台图片，返回 `asset_id`、`original_url`、`cover_url`、`thumb_url`
 
 公开 API：
 

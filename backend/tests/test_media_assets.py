@@ -1,12 +1,38 @@
 from __future__ import annotations
 
+from base64 import b64decode
 from pathlib import Path
 
 import pytest
+from fastapi.testclient import TestClient
 
+from hot_backend.app import create_app
+from hot_backend.auth import TokenPayload, get_current_admin
 from hot_backend.media_assets import build_asset_descriptor
 from hot_backend.media_variants import normalize_extension
 from hot_backend.sqlite_store import HotSQLiteStore
+
+MAX_TEST_UPLOAD_SIZE_BYTES = 10 * 1024 * 1024
+PNG_BYTES = b64decode(
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+nmZ0AAAAASUVORK5CYII="
+)
+
+
+def _create_admin_client(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> tuple[TestClient, HotSQLiteStore]:
+    store = HotSQLiteStore(tmp_path / "media-assets.sqlite3")
+    store.initialize()
+    monkeypatch.setattr("hot_backend.sqlite_store.get_store", lambda: store)
+
+    app = create_app()
+    app.dependency_overrides[get_current_admin] = lambda: TokenPayload(
+        sub="admin",
+        iat=0,
+        exp=4102444800,
+    )
+    return TestClient(app), store
 
 
 def test_media_asset_urls_follow_static_cloudbase_contract() -> None:
@@ -79,3 +105,63 @@ def test_media_asset_row_can_be_persisted_and_loaded(tmp_path: Path) -> None:
     listed = store.list_media_assets()
     assert len(listed) == 1
     assert listed[0] == created
+
+
+def test_admin_media_upload_returns_asset_payload(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    uploads: list[tuple[str, str, bytes]] = []
+
+    def fake_upload_to_r2(*, storage_key: str, content: bytes, content_type: str) -> None:
+        uploads.append((storage_key, content_type, content))
+
+    client, store = _create_admin_client(tmp_path, monkeypatch)
+    monkeypatch.setattr("hot_backend.media_assets.upload_to_r2", fake_upload_to_r2)
+
+    response = client.post(
+        "/api/admin/media-assets/upload",
+        files={"file": ("qr.png", PNG_BYTES, "image/png")},
+    )
+
+    assert response.status_code == 201
+    body = response.json()
+
+    assert body["asset_id"]
+    assert body["source_kind"] == "uploaded"
+    assert body["original_url"].startswith("https://static.cloudbase.eu.org/")
+    assert body["cover_url"].startswith("https://static.cloudbase.eu.org/")
+    assert body["thumb_url"].startswith("https://static.cloudbase.eu.org/")
+    assert body["width"] == 1
+    assert body["height"] == 1
+    assert body["mime_type"] == "image/png"
+    assert body["status"] == "ready"
+
+    assert uploads == [
+        (body["storage_key_original"], "image/png", PNG_BYTES),
+        (body["storage_key_cover"], "image/png", PNG_BYTES),
+        (body["storage_key_thumb"], "image/png", PNG_BYTES),
+    ]
+
+    assert store.get_media_asset(body["asset_id"]) == body
+
+
+def test_admin_media_upload_rejects_oversized_files(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    client, _ = _create_admin_client(tmp_path, monkeypatch)
+
+    response = client.post(
+        "/api/admin/media-assets/upload",
+        files={
+            "file": (
+                "qr.png",
+                PNG_BYTES + (b"\x00" * MAX_TEST_UPLOAD_SIZE_BYTES),
+                "image/png",
+            )
+        },
+    )
+
+    assert response.status_code == 413
+    assert response.json()["detail"] == "Uploaded file exceeds the 10485760 byte limit"
