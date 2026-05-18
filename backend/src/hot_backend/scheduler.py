@@ -181,6 +181,7 @@ async def apply_scheduler_config():
 
     if schedule.get("enabled"):
         interval = schedule.get("interval_minutes", 60)
+        next_run = datetime.now(timezone.utc) + timedelta(minutes=interval)
 
         if scheduler.get_job(scheduler_job_id):
             scheduler.remove_job(scheduler_job_id)
@@ -195,7 +196,9 @@ async def apply_scheduler_config():
         if not scheduler.running:
             scheduler.start()
             logger.info(f"Scheduler started with {interval}min interval")
+        store.update_collector_schedule({"next_run_at": next_run.isoformat()})
     else:
         if scheduler.get_job(scheduler_job_id):
             scheduler.remove_job(scheduler_job_id)
+        store.update_collector_schedule({"next_run_at": None})
         logger.info("Scheduler disabled")

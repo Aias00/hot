@@ -6,9 +6,12 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from uuid import uuid4
 
+import pytest
 from fastapi.testclient import TestClient
 
 from hot_backend.app import create_app
+from hot_backend.auth import TokenPayload
+from hot_backend.auth import get_current_admin
 from hot_backend.sqlite_store import HotSQLiteStore, MP_SEED_PATH, RSS_GENERIC_SAMPLE_PATH, get_store
 
 
@@ -213,6 +216,52 @@ def test_store_backfills_about_navigation_and_old_about_schema(tmp_path: Path) -
     assert about_config["title"] == "关于"
     assert isinstance(about_config["links"], list)
     assert about_config["qr_code_url"] == "/wechat-qr.png"
+
+
+def test_admin_schedule_update_applies_scheduler_config(monkeypatch: pytest.MonkeyPatch) -> None:
+    applied: dict[str, bool] = {"called": False}
+
+    def fake_update_scheduler_config(*, enabled=None, interval_minutes=None):
+        return {
+            "enabled": enabled,
+            "interval_minutes": interval_minutes,
+            "last_run_at": None,
+            "next_run_at": None,
+            "last_run_status": None,
+        }
+
+    async def fake_apply_scheduler_config():
+        applied["called"] = True
+
+    app = create_app()
+    app.dependency_overrides[get_current_admin] = lambda: TokenPayload(sub="admin", iat=0, exp=4102444800)
+    monkeypatch.setattr("hot_backend.scheduler.update_scheduler_config", fake_update_scheduler_config)
+    monkeypatch.setattr("hot_backend.scheduler.apply_scheduler_config", fake_apply_scheduler_config)
+
+    client = TestClient(app)
+    response = client.put("/api/admin/schedule", json={"enabled": True, "interval_minutes": 60})
+
+    assert response.status_code == 200
+    assert applied["called"] is True
+
+
+def test_app_startup_applies_scheduler_config(monkeypatch: pytest.MonkeyPatch) -> None:
+    applied: dict[str, bool] = {"startup": False, "shutdown": False}
+
+    async def fake_apply_scheduler_config():
+        applied["startup"] = True
+
+    def fake_stop_scheduler():
+        applied["shutdown"] = True
+
+    monkeypatch.setattr("hot_backend.app.apply_scheduler_config", fake_apply_scheduler_config)
+    monkeypatch.setattr("hot_backend.app.stop_scheduler", fake_stop_scheduler)
+
+    with TestClient(create_app()):
+        pass
+
+    assert applied["startup"] is True
+    assert applied["shutdown"] is True
 
 
 def _create_mp_snapshot_source(client: TestClient, source_id: str) -> None:

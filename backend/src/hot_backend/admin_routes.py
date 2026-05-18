@@ -390,17 +390,19 @@ def get_schedule(
 
 
 @router.put("/schedule")
-def update_schedule(
+async def update_schedule(
     config: dict,
     _: TokenPayload = Depends(get_current_admin),
 ) -> dict:
     """Update collector schedule configuration."""
-    from hot_backend.scheduler import update_scheduler_config
+    from hot_backend.scheduler import apply_scheduler_config, update_scheduler_config
 
-    return update_scheduler_config(
+    schedule = update_scheduler_config(
         enabled=config.get("enabled"),
         interval_minutes=config.get("interval_minutes"),
     )
+    await apply_scheduler_config()
+    return schedule
 
 
 @router.post("/schedule/run")
