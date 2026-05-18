@@ -1,6 +1,8 @@
 # Progress
 
 ## Done
+- 已完成 Cloudflare R2 图片管线 Phase 1 的 rollout 文档收口：`README.md` 现在明确列出 R2/CDN 必填环境变量、公开 URL 合同、`/admin/about` 上传二维码的使用流程，以及 `original_url / cover_url / thumb_url` 的预期消费位置。
+- 已记录本轮上线边界：后台上传现在已经统一走 `static.cloudbase.eu.org` 资产合同并回填到 `about_config.qr_code_url`，collector 侧远程图片镜像继续刻意推迟到下一阶段，避免当前 Phase 1 把两条链路耦合。
 - 已把站点首页默认入口改为导航页：根路由 `/` 现在直接渲染“导航中心”，原隐藏的“精选”页改为显式保留在 `/featured`，同时对现有导航配置里的旧 `/nav-hub` 入口做了前端映射与后端幂等回写兼容。
 - 已修正生产环境“定时采集启用但不运行”的根因：`x_atuo` 应用壳使用 lifespan，原先 hot 的 scheduler 没有真正接到启动链路；现已改为与 `x_atuo` 共用 lifespan 包装，并让管理后台保存配置后立即 `apply_scheduler_config()`，生产机重启后 `next_run_at` 会按当前时间重算。
 - 已将展示层品牌统一收口为 `AI Digest / ai-digest`：浏览器标题、meta 描述、导航中心词标、关于页品牌介绍以及日报主标题文案不再保留 `AIHOT / AI HOT / ai-nav` 残留。
@@ -121,9 +123,10 @@
 - 已把本地图片 `/Users/aias/Downloads/20260514233030_153_31.jpg` 放到 `public/wechat-qr.png`，侧栏二维码展示位现在已经显示真实公众号图片。
 
 ## Failures
-- 暂无。
+- 本地 fresh manual verification 还没法完整覆盖真实 R2 上传链路：当前工作区的 `backend/.env` 只设置了 `ADMIN_PASSWORD` / `JWT_SECRET`，没有可直接用于 `POST /api/admin/media-assets/upload` 的 R2 凭据，因此这轮只能完成自动化测试与构建验证，真实云端上传仍需在已配置凭据的环境补一遍。
 
 ## Next
+- 如需继续推进图片链路，下一阶段应实现 collector 远程图片镜像、内容到资产的关联关系，以及列表/详情页消费 `cover_url` / `thumb_url`。
 - 如需继续整合外部项目，下一步最值得做的是给“导航中心”补来源管理入口或收藏态，而不是继续复制原仓库的整个应用壳。
 - 如需继续“真 fork”，下一步可以把 seed 快照导入脚本化，或者直接接 `x_atuo.core` 的实时采集能力。
 - 如需继续工程化，可补后端 pytest、前后端联合 CI，以及后台同步任务/管理接口。
