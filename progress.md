@@ -1,6 +1,7 @@
 # Progress
 
 ## Done
+- 已把仓库内的 `public/wechat-qr.png` 从“内容实际为 JPEG、后缀伪装成 .png”的历史状态修正为真正的 PNG 文件，避免后台上传校验因 MIME/魔数不一致而拒绝该二维码图。
 - 已完成 Cloudflare R2 图片管线 Phase 1 的 rollout 文档收口：`README.md` 现在明确列出 R2/CDN 必填环境变量、公开 URL 合同、`/admin/about` 上传二维码的使用流程，以及 `original_url / cover_url / thumb_url` 的预期消费位置。
 - 已记录本轮上线边界：后台上传现在已经统一走默认推荐的 `static.cloudbase.eu.org` 资产合同（运行时仍可由 `MEDIA_CDN_BASE_URL` 覆盖）；上传动作会先把返回的 `original_url` 填进表单的 `qr_code_url`，只有用户随后执行单独的保存动作，才会真正持久化到 `about_config.qr_code_url`。collector 侧远程图片镜像继续刻意推迟到下一阶段，避免当前 Phase 1 把两条链路耦合。
 - 已把站点首页默认入口改为导航页：根路由 `/` 现在直接渲染“导航中心”，原隐藏的“精选”页改为显式保留在 `/featured`，同时对现有导航配置里的旧 `/nav-hub` 入口做了前端映射与后端幂等回写兼容。
